@@ -1,7 +1,7 @@
 import { lstatSync, readFileSync } from 'fs'
 import { basename, extname, relative } from 'path'
 import klaw from 'klaw'
-import { ASTNode } from '@solidity-parser/parser/dist/ast-types'
+import { ASTNode } from '@solidity-parser/parser/dist/src/ast-types'
 import { parse } from '@solidity-parser/parser'
 import { VError } from 'verror'
 

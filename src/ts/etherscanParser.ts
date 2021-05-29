@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ASTNode } from '@solidity-parser/parser/dist/ast-types'
+import { ASTNode } from '@solidity-parser/parser/dist/src/ast-types'
 import { parse } from '@solidity-parser/parser'
 import { VError } from 'verror'
 
