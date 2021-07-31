@@ -8,7 +8,8 @@ import { UmlClass } from './umlClass'
 const debugControl = require('debug')
 const debug = require('debug')('sol2uml')
 
-const program = require('commander')
+import { Command } from 'commander'
+const program = new Command()
 
 program
     .usage(
@@ -37,7 +38,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
     .option(
         '-d, --depthLimit <depth>',
         'number of sub folders that will be recursively searched for Solidity files. Default -1 is unlimited',
-        -1
+        '-1'
     )
     .option(
         '-i, --ignoreFilesOrFolders <filesOrFolders>',
@@ -62,7 +63,9 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
     .option('-v, --verbose', 'run with debugging statements')
     .parse(process.argv)
 
-if (program.verbose) {
+const options = program.opts()
+
+if (options.verbose) {
     debugControl.enable('sol2uml')
 }
 
@@ -84,25 +87,25 @@ async function sol2uml() {
         )
 
         const etherscanApiKey =
-            program.etherscanApiKey || 'ZAD4UI2RCXCQTP38EXS3UY2MPHFU5H9KB1'
+            options.etherscanApiKey || 'ZAD4UI2RCXCQTP38EXS3UY2MPHFU5H9KB1'
         const etherscanParser = new EtherscanParser(
             etherscanApiKey,
-            program.network
+            options.network
         )
 
         umlClasses = await etherscanParser.getUmlClasses(fileFolderAddress)
     } else {
-        const depthLimit = parseInt(program.depthLimit)
+        const depthLimit = parseInt(options.depthLimit)
         if (isNaN(depthLimit)) {
             console.error(
-                `depthLimit option must be an integer. Not ${program.depthLimit}`
+                `depthLimit option must be an integer. Not ${options.depthLimit}`
             )
             process.exit(1)
         }
 
         const filesFolders: string[] = fileFolderAddress.split(',')
-        let ignoreFilesFolders = program.ignoreFilesOrFolders
-            ? program.ignoreFilesOrFolders.split(',')
+        let ignoreFilesFolders = options.ignoreFilesOrFolders
+            ? options.ignoreFilesOrFolders.split(',')
             : []
         umlClasses = await parseUmlClassesFromFiles(
             filesFolders,
@@ -112,8 +115,8 @@ async function sol2uml() {
     }
 
     let filteredUmlClasses = umlClasses
-    if (program.baseContractNames) {
-        const baseContractNames = program.baseContractNames.split(',')
+    if (options.baseContractNames) {
+        const baseContractNames = options.baseContractNames.split(',')
         filteredUmlClasses = classesConnectedToBaseContracts(
             umlClasses,
             baseContractNames
@@ -123,16 +126,16 @@ async function sol2uml() {
     generateFilesFromUmlClasses(
         filteredUmlClasses,
         fileFolderAddress,
-        program.outputFormat,
-        program.outputFileName,
-        program.clusterFolders,
+        options.outputFormat,
+        options.outputFileName,
+        options.clusterFolders,
         {
-            hideAttributes: program.hideAttributes,
-            hideOperators: program.hideOperators,
-            hideEnums: program.hideEnums,
-            hideStructs: program.hideStructs,
-            hideLibraries: program.hideLibraries,
-            hideInterfaces: program.hideInterfaces,
+            hideAttributes: options.hideAttributes,
+            hideOperators: options.hideOperators,
+            hideEnums: options.hideEnums,
+            hideStructs: options.hideStructs,
+            hideLibraries: options.hideLibraries,
+            hideInterfaces: options.hideInterfaces,
         }
     ).then(() => {
         debug(`Finished`)
