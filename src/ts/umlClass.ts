@@ -12,6 +12,8 @@ export enum ClassStereotype {
     Interface,
     Abstract,
     Contract,
+    Struct,
+    Enum,
 }
 
 export enum OperatorStereotype {

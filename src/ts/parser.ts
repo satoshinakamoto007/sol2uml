@@ -1,10 +1,16 @@
 import {
     ASTNode,
     ContractDefinition,
+    ElementaryTypeName,
+    EnumDefinition,
+    EnumValue,
     Expression,
+    StructDefinition,
     TypeName,
+    UserDefinedTypeName,
+    UsingForDeclaration,
     VariableDeclaration,
-} from '@solidity-parser/parser/dist/ast-types'
+} from '@solidity-parser/parser/dist/src/ast-types'
 import * as path from 'path'
 
 import {
@@ -15,6 +21,15 @@ import {
     UmlClass,
     Visibility,
 } from './umlClass'
+import {
+    isEnumDefinition,
+    isEventDefinition,
+    isFunctionDefinition,
+    isModifierDefinition,
+    isStateVariableDeclaration,
+    isStructDefinition,
+    isUsingForDeclaration,
+} from './typeGuards'
 
 const debug = require('debug')('sol2uml')
 
@@ -40,6 +55,36 @@ export function convertNodeToUmlClass(
                 })
 
                 umlClass = parseContractDefinition(umlClass, childNode)
+
+                umlClasses.push(umlClass)
+            } else if (childNode.type === 'StructDefinition') {
+                debug(`Adding struct ${childNode.name}`)
+
+                let umlClass = new UmlClass({
+                    name: childNode.name,
+                    stereotype: ClassStereotype.Struct,
+                    absolutePath: filesystem
+                        ? path.resolve(relativePath) // resolve the absolute path
+                        : relativePath, // from Etherscan so don't resolve
+                    relativePath,
+                })
+
+                umlClass = parseStructDefinition(umlClass, childNode)
+
+                umlClasses.push(umlClass)
+            } else if (childNode.type === 'EnumDefinition') {
+                debug(`Adding enum ${childNode.name}`)
+
+                let umlClass = new UmlClass({
+                    name: childNode.name,
+                    stereotype: ClassStereotype.Enum,
+                    absolutePath: filesystem
+                        ? path.resolve(relativePath) // resolve the absolute path
+                        : relativePath, // from Etherscan so don't resolve
+                    relativePath,
+                })
+
+                umlClass = parseEnumDefinition(umlClass, childNode)
 
                 umlClasses.push(umlClass)
             } else if (childNode.type === 'ImportDirective') {
@@ -74,6 +119,41 @@ export function convertNodeToUmlClass(
     return umlClasses
 }
 
+function parseStructDefinition(
+    umlClass: UmlClass,
+    node: StructDefinition
+): UmlClass {
+    node.members.forEach((member: VariableDeclaration) => {
+        umlClass.attributes.push({
+            name: member.name,
+            type: parseTypeName(member.typeName),
+        })
+    })
+
+    // Recursively parse struct members for associations
+    umlClass = addAssociations(node.members, umlClass)
+
+    return umlClass
+}
+
+function parseEnumDefinition(
+    umlClass: UmlClass,
+    node: EnumDefinition
+): UmlClass {
+    let index = 0
+    node.members.forEach((member: EnumValue) => {
+        umlClass.attributes.push({
+            name: member.name,
+            type: (index++).toString(),
+        })
+    })
+
+    // Recursively parse struct members for associations
+    umlClass = addAssociations(node.members, umlClass)
+
+    return umlClass
+}
+
 function parseContractDefinition(
     umlClass: UmlClass,
     node: ContractDefinition
@@ -92,145 +172,121 @@ function parseContractDefinition(
 
     // For each sub node
     node.subNodes.forEach((subNode) => {
-        switch (subNode.type) {
-            case 'StateVariableDeclaration':
-                subNode.variables.forEach((variable: VariableDeclaration) => {
-                    umlClass.attributes.push({
-                        visibility: parseVisibility(variable.visibility),
-                        name: variable.name,
-                        type: parseTypeName(variable.typeName),
-                    })
+        if (isStateVariableDeclaration(subNode)) {
+            subNode.variables.forEach((variable: VariableDeclaration) => {
+                umlClass.attributes.push({
+                    visibility: parseVisibility(variable.visibility),
+                    name: variable.name,
+                    type: parseTypeName(variable.typeName),
                 })
+            })
 
-                // Recursively parse variables for associations
-                umlClass = addAssociations(subNode.variables, umlClass)
-
-                break
-
-            case 'UsingForDeclaration':
-                // Add association to library contract
-                umlClass.addAssociation({
-                    referenceType: ReferenceType.Memory,
-                    targetUmlClassName: subNode.libraryName,
+            // Recursively parse variables for associations
+            umlClass = addAssociations(subNode.variables, umlClass)
+        } else if (isUsingForDeclaration(subNode)) {
+            // Add association to library contract
+            umlClass.addAssociation({
+                referenceType: ReferenceType.Memory,
+                targetUmlClassName: (<UsingForDeclaration>subNode).libraryName,
+            })
+        } else if (isFunctionDefinition(subNode)) {
+            if (subNode.isConstructor) {
+                umlClass.operators.push({
+                    name: 'constructor',
+                    stereotype: OperatorStereotype.None,
+                    parameters: parseParameters(subNode.parameters),
                 })
+            }
+            // If a fallback function
+            else if (subNode.name === '') {
+                umlClass.operators.push({
+                    name: '',
+                    stereotype: OperatorStereotype.Fallback,
+                    parameters: parseParameters(subNode.parameters),
+                    isPayable: parsePayable(subNode.stateMutability),
+                })
+            } else {
+                let stereotype = OperatorStereotype.None
 
-                break
-
-            case 'FunctionDefinition':
-                if (subNode.isConstructor) {
-                    umlClass.operators.push({
-                        name: 'constructor',
-                        stereotype: OperatorStereotype.None,
-                        parameters: parseParameters(subNode.parameters),
-                    })
-                }
-                // If a fallback function
-                else if (subNode.name === '') {
-                    umlClass.operators.push({
-                        name: '',
-                        stereotype: OperatorStereotype.Fallback,
-                        parameters: parseParameters(subNode.parameters),
-                        isPayable: parsePayable(subNode.stateMutability),
-                    })
-                } else {
-                    let stereotype = OperatorStereotype.None
-
-                    if (subNode.body === null) {
-                        stereotype = OperatorStereotype.Abstract
-                    } else if (subNode.stateMutability === 'payable') {
-                        stereotype = OperatorStereotype.Payable
-                    }
-
-                    umlClass.operators.push({
-                        visibility: parseVisibility(subNode.visibility),
-                        name: subNode.name,
-                        stereotype,
-                        parameters: parseParameters(subNode.parameters),
-                        returnParameters: parseParameters(
-                            subNode.returnParameters
-                        ),
-                    })
-                }
-
-                // Recursively parse function parameters for associations
-                umlClass = addAssociations(subNode.parameters, umlClass)
-                if (subNode.returnParameters) {
-                    umlClass = addAssociations(
-                        subNode.returnParameters,
-                        umlClass
-                    )
-                }
-
-                // If no body to the function, it must be either an Interface or Abstract
                 if (subNode.body === null) {
-                    if (umlClass.stereotype !== ClassStereotype.Interface) {
-                        // If not Interface, it must be Abstract
-                        umlClass.stereotype = ClassStereotype.Abstract
-                    }
-                } else {
-                    // Recursively parse function statements for associations
-                    umlClass = addAssociations(
-                        subNode.body.statements,
-                        umlClass
-                    )
+                    stereotype = OperatorStereotype.Abstract
+                } else if (subNode.stateMutability === 'payable') {
+                    stereotype = OperatorStereotype.Payable
                 }
 
-                break
-
-            case 'ModifierDefinition':
                 umlClass.operators.push({
-                    stereotype: OperatorStereotype.Modifier,
+                    visibility: parseVisibility(subNode.visibility),
                     name: subNode.name,
+                    stereotype,
                     parameters: parseParameters(subNode.parameters),
+                    returnParameters: parseParameters(subNode.returnParameters),
                 })
+            }
 
-                if (subNode.body && subNode.body.statements) {
-                    // Recursively parse modifier statements for associations
-                    umlClass = addAssociations(
-                        subNode.body.statements,
-                        umlClass
-                    )
+            // Recursively parse function parameters for associations
+            umlClass = addAssociations(subNode.parameters, umlClass)
+            if (subNode.returnParameters) {
+                umlClass = addAssociations(subNode.returnParameters, umlClass)
+            }
+
+            // If no body to the function, it must be either an Interface or Abstract
+            if (subNode.body === null) {
+                if (umlClass.stereotype !== ClassStereotype.Interface) {
+                    // If not Interface, it must be Abstract
+                    umlClass.stereotype = ClassStereotype.Abstract
                 }
-                break
+            } else {
+                // Recursively parse function statements for associations
+                umlClass = addAssociations(
+                    subNode.body.statements as ASTNode[],
+                    umlClass
+                )
+            }
+        } else if (isModifierDefinition(subNode)) {
+            umlClass.operators.push({
+                stereotype: OperatorStereotype.Modifier,
+                name: subNode.name,
+                parameters: parseParameters(subNode.parameters),
+            })
 
-            case 'EventDefinition':
-                umlClass.operators.push({
-                    stereotype: OperatorStereotype.Event,
-                    name: subNode.name,
-                    parameters: parseParameters(subNode.parameters),
+            if (subNode.body && subNode.body.statements) {
+                // Recursively parse modifier statements for associations
+                umlClass = addAssociations(
+                    subNode.body.statements as ASTNode[],
+                    umlClass
+                )
+            }
+        } else if (isEventDefinition(subNode)) {
+            umlClass.operators.push({
+                stereotype: OperatorStereotype.Event,
+                name: subNode.name,
+                parameters: parseParameters(subNode.parameters),
+            })
+
+            // Recursively parse event parameters for associations
+            umlClass = addAssociations(subNode.parameters, umlClass)
+        } else if (isStructDefinition(subNode)) {
+            let structMembers: Parameter[] = []
+
+            subNode.members.forEach((member) => {
+                structMembers.push({
+                    name: member.name,
+                    type: parseTypeName(member.typeName),
                 })
+            })
 
-                // Recursively parse event parameters for associations
-                umlClass = addAssociations(subNode.parameters, umlClass)
+            umlClass.structs[subNode.name] = structMembers
 
-                break
+            // Recursively parse members for associations
+            umlClass = addAssociations(subNode.members, umlClass)
+        } else if (isEnumDefinition(subNode)) {
+            let enumValues: string[] = []
 
-            case 'StructDefinition':
-                let structMembers: Parameter[] = []
+            subNode.members.forEach((member) => {
+                enumValues.push(member.name)
+            })
 
-                subNode.members.forEach((member) => {
-                    structMembers.push({
-                        name: member.name,
-                        type: parseTypeName(member.typeName),
-                    })
-                })
-
-                umlClass.structs[subNode.name] = structMembers
-
-                // Recursively parse members for associations
-                umlClass = addAssociations(subNode.members, umlClass)
-
-                break
-
-            case 'EnumDefinition':
-                let enumValues: string[] = []
-
-                subNode.members.forEach((member) => {
-                    enumValues.push(member.name)
-                })
-
-                umlClass.enums[subNode.name] = enumValues
-                break
+            umlClass.enums[subNode.name] = enumValues
         }
     })
 
@@ -291,16 +347,25 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                 })
                 break
             case 'Block':
-                umlClass = addAssociations(node.statements, umlClass)
+                umlClass = addAssociations(
+                    node.statements as ASTNode[],
+                    umlClass
+                )
                 break
             case 'StateVariableDeclaration':
             case 'VariableDeclarationStatement':
-                umlClass = addAssociations(node.variables, umlClass)
+                umlClass = addAssociations(
+                    node.variables as ASTNode[],
+                    umlClass
+                )
                 umlClass = parseExpression(node.initialValue, umlClass)
                 break
             case 'ForStatement':
                 if ('statements' in node.body) {
-                    umlClass = addAssociations(node.body.statements, umlClass)
+                    umlClass = addAssociations(
+                        node.body.statements as ASTNode[],
+                        umlClass
+                    )
                 }
                 umlClass = parseExpression(node.conditionExpression, umlClass)
                 umlClass = parseExpression(
@@ -310,12 +375,18 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                 break
             case 'WhileStatement':
                 if ('statements' in node.body) {
-                    umlClass = addAssociations(node.body.statements, umlClass)
+                    umlClass = addAssociations(
+                        node.body.statements as ASTNode[],
+                        umlClass
+                    )
                 }
                 break
             case 'DoWhileStatement':
                 if ('statements' in node.body) {
-                    umlClass = addAssociations(node.body.statements, umlClass)
+                    umlClass = addAssociations(
+                        node.body.statements as ASTNode[],
+                        umlClass
+                    )
                 }
                 umlClass = parseExpression(node.condition, umlClass)
                 break
@@ -327,7 +398,7 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                 if (node.trueBody) {
                     if ('statements' in node.trueBody) {
                         umlClass = addAssociations(
-                            node.trueBody.statements,
+                            node.trueBody.statements as ASTNode[],
                             umlClass
                         )
                     }
@@ -341,7 +412,7 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                 if (node.falseBody) {
                     if ('statements' in node.falseBody) {
                         umlClass = addAssociations(
-                            node.falseBody.statements,
+                            node.falseBody.statements as ASTNode[],
                             umlClass
                         )
                     }
@@ -380,7 +451,7 @@ function parseExpression(expression: Expression, umlClass: UmlClass): UmlClass {
         umlClass = parseExpression(expression.index, umlClass)
     } else if (expression.type === 'TupleExpression') {
         expression.components.forEach((component) => {
-            umlClass = parseExpression(component, umlClass)
+            umlClass = parseExpression(component as Expression, umlClass)
         })
     } else if (expression.type === 'MemberAccess') {
         umlClass = parseExpression(expression.expression, umlClass)
@@ -451,13 +522,11 @@ function parseTypeName(typeName: TypeName): string {
         case 'ArrayTypeName':
             return parseTypeName(typeName.baseTypeName) + '[]'
         case 'Mapping':
-            return (
-                'mapping\\(' +
-                typeName.keyType.name +
-                '=\\>' +
-                parseTypeName(typeName.valueType) +
-                '\\)'
-            )
+            const key =
+                (<ElementaryTypeName>typeName.keyType)?.name ||
+                (<UserDefinedTypeName>typeName.keyType)?.namePath
+            const value = parseTypeName(typeName.valueType)
+            return 'mapping\\(' + key + '=\\>' + value + '\\)'
         default:
             throw Error(`Invalid typeName ${typeName}`)
     }

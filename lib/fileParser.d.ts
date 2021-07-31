@@ -1,4 +1,4 @@
-import { ASTNode } from '@solidity-parser/parser/dist/ast-types';
+import { ASTNode } from '@solidity-parser/parser/dist/src/ast-types';
 import { UmlClass } from './umlClass';
 export declare const parseUmlClassesFromFiles: (filesOrFolders: string[], ignoreFilesOrFolders: string[], depthLimit?: number) => Promise<UmlClass[]>;
 export declare function getSolidityFilesFromFolderOrFiles(folderOrFilePaths: string[], ignoreFilesOrFolders: string[], depthLimit?: number): Promise<string[]>;
