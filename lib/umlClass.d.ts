@@ -10,7 +10,9 @@ export declare enum ClassStereotype {
     Library = 1,
     Interface = 2,
     Abstract = 3,
-    Contract = 4
+    Contract = 4,
+    Struct = 5,
+    Enum = 6
 }
 export declare enum OperatorStereotype {
     None = 0,

@@ -2,7 +2,10 @@ import {
     ASTNode,
     ContractDefinition,
     ElementaryTypeName,
+    EnumDefinition,
+    EnumValue,
     Expression,
+    StructDefinition,
     TypeName,
     UserDefinedTypeName,
     UsingForDeclaration,
@@ -26,7 +29,7 @@ import {
     isStateVariableDeclaration,
     isStructDefinition,
     isUsingForDeclaration,
-} from './parserTypes'
+} from './typeGuards'
 
 const debug = require('debug')('sol2uml')
 
@@ -52,6 +55,36 @@ export function convertNodeToUmlClass(
                 })
 
                 umlClass = parseContractDefinition(umlClass, childNode)
+
+                umlClasses.push(umlClass)
+            } else if (childNode.type === 'StructDefinition') {
+                debug(`Adding struct ${childNode.name}`)
+
+                let umlClass = new UmlClass({
+                    name: childNode.name,
+                    stereotype: ClassStereotype.Struct,
+                    absolutePath: filesystem
+                        ? path.resolve(relativePath) // resolve the absolute path
+                        : relativePath, // from Etherscan so don't resolve
+                    relativePath,
+                })
+
+                umlClass = parseStructDefinition(umlClass, childNode)
+
+                umlClasses.push(umlClass)
+            } else if (childNode.type === 'EnumDefinition') {
+                debug(`Adding enum ${childNode.name}`)
+
+                let umlClass = new UmlClass({
+                    name: childNode.name,
+                    stereotype: ClassStereotype.Enum,
+                    absolutePath: filesystem
+                        ? path.resolve(relativePath) // resolve the absolute path
+                        : relativePath, // from Etherscan so don't resolve
+                    relativePath,
+                })
+
+                umlClass = parseEnumDefinition(umlClass, childNode)
 
                 umlClasses.push(umlClass)
             } else if (childNode.type === 'ImportDirective') {
@@ -84,6 +117,41 @@ export function convertNodeToUmlClass(
     })
 
     return umlClasses
+}
+
+function parseStructDefinition(
+    umlClass: UmlClass,
+    node: StructDefinition
+): UmlClass {
+    node.members.forEach((member: VariableDeclaration) => {
+        umlClass.attributes.push({
+            name: member.name,
+            type: parseTypeName(member.typeName),
+        })
+    })
+
+    // Recursively parse struct members for associations
+    umlClass = addAssociations(node.members, umlClass)
+
+    return umlClass
+}
+
+function parseEnumDefinition(
+    umlClass: UmlClass,
+    node: EnumDefinition
+): UmlClass {
+    let index = 0
+    node.members.forEach((member: EnumValue) => {
+        umlClass.attributes.push({
+            name: member.name,
+            type: (index++).toString(),
+        })
+    })
+
+    // Recursively parse struct members for associations
+    umlClass = addAssociations(node.members, umlClass)
+
+    return umlClass
 }
 
 function parseContractDefinition(
@@ -454,13 +522,11 @@ function parseTypeName(typeName: TypeName): string {
         case 'ArrayTypeName':
             return parseTypeName(typeName.baseTypeName) + '[]'
         case 'Mapping':
-            return (
-                'mapping\\(' + (<ElementaryTypeName>typeName.keyType)?.name ||
-                (<UserDefinedTypeName>typeName.keyType)?.namePath +
-                    '=\\>' +
-                    parseTypeName(typeName.valueType) +
-                    '\\)'
-            )
+            const key =
+                (<ElementaryTypeName>typeName.keyType)?.name ||
+                (<UserDefinedTypeName>typeName.keyType)?.namePath
+            const value = parseTypeName(typeName.valueType)
+            return 'mapping\\(' + key + '=\\>' + value + '\\)'
         default:
             throw Error(`Invalid typeName ${typeName}`)
     }

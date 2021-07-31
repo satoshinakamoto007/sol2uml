@@ -31,6 +31,7 @@ export const dotUmlClass = (
     ) {
         return ''
     }
+
     let dotString = `\n${umlClass.id} [label="{${dotClassTitle(umlClass)}`
 
     // Add attributes
@@ -68,6 +69,12 @@ const dotClassTitle = (umlClass: UmlClass): string => {
         case ClassStereotype.Library:
             stereoName = 'Library'
             break
+        case ClassStereotype.Struct:
+            stereoName = 'Struct'
+            break
+        case ClassStereotype.Enum:
+            stereoName = 'Enum'
+            break
         default:
             // Contract or undefined stereotype will just return the UmlClass name
             return umlClass.name
@@ -78,6 +85,13 @@ const dotClassTitle = (umlClass: UmlClass): string => {
 
 const dotAttributeVisibilities = (umlClass: UmlClass): string => {
     let dotString = '| '
+    // if a struct or enum then no visibility group
+    if (
+        umlClass.stereotype === ClassStereotype.Struct ||
+        umlClass.stereotype === ClassStereotype.Enum
+    ) {
+        return dotString + dotAttributes(umlClass.attributes, undefined, false)
+    }
 
     // For each visibility group
     for (const vizGroup of ['Private', 'Internal', 'External', 'Public']) {
@@ -112,22 +126,27 @@ const dotAttributeVisibilities = (umlClass: UmlClass): string => {
             }
         }
 
-        dotString += dotAttributes(vizGroup, attributes)
+        dotString += dotAttributes(attributes, vizGroup)
     }
 
     return dotString
 }
 
-const dotAttributes = (vizGroup: string, attributes: Attribute[]): string => {
+const dotAttributes = (
+    attributes: Attribute[],
+    vizGroup?: string,
+    indent = true
+): string => {
     if (!attributes || attributes.length === 0) {
         return ''
     }
+    const indentString = indent ? '\\ \\ \\ ' : ''
 
-    let dotString = vizGroup + ':\\l'
+    let dotString = vizGroup ? vizGroup + ':\\l' : ''
 
     // for each attribute
     attributes.forEach((attribute) => {
-        dotString += `\\ \\ \\ ${attribute.name}: ${attribute.type}\\l`
+        dotString += `${indentString}${attribute.name}: ${attribute.type}\\l`
     })
 
     return dotString
@@ -309,8 +328,9 @@ const dotEnums = (umlClass: UmlClass): string => {
         dotString += `\n"${enumId}" [label="{\\<\\<enum\\>\\>\\n${enumKey}|`
 
         // output each enum value
+        let enumIndex = 0
         for (const value of umlClass.enums[enumKey]) {
-            dotString += value + '\\l'
+            dotString += value + ': ' + enumIndex++ + '\\l'
         }
 
         dotString += '}"]'
