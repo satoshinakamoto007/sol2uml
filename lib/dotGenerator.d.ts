@@ -6,5 +6,6 @@ export interface ClassOptions {
     hideEnums?: boolean;
     hideLibraries?: boolean;
     hideInterfaces?: boolean;
+    hideInternals?: boolean;
 }
 export declare const dotUmlClass: (umlClass: UmlClass, options?: ClassOptions) => string;

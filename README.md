@@ -60,6 +60,7 @@ Options:
   -s, --hideStructs                            hide data structures
   -l, --hideLibraries                          hide libraries
   -t, --hideInterfaces                         hide interfaces
+  -r, --hideInternals                          hide private and internal attributes and operators
   -k, --etherscanApiKey <key>                  Etherscan API Key
   -c, --clusterFolders                         cluster contracts into source folders
   -v, --verbose                                run with debugging statements

@@ -16,6 +16,7 @@ export interface ClassOptions {
     hideEnums?: boolean
     hideLibraries?: boolean
     hideInterfaces?: boolean
+    hideInternals?: boolean
 }
 
 export const dotUmlClass = (
@@ -36,12 +37,12 @@ export const dotUmlClass = (
 
     // Add attributes
     if (!options.hideAttributes) {
-        dotString += dotAttributeVisibilities(umlClass)
+        dotString += dotAttributeVisibilities(umlClass, options)
     }
 
     // Add operators
     if (!options.hideOperators) {
-        dotString += dotOperatorVisibilities(umlClass)
+        dotString += dotOperatorVisibilities(umlClass, options)
     }
 
     dotString += '}"]'
@@ -83,7 +84,10 @@ const dotClassTitle = (umlClass: UmlClass): string => {
     return `\\<\\<${stereoName}\\>\\>\\n${umlClass.name}`
 }
 
-const dotAttributeVisibilities = (umlClass: UmlClass): string => {
+const dotAttributeVisibilities = (
+    umlClass: UmlClass,
+    options: { hideInternals?: boolean } = {}
+): string => {
     let dotString = '| '
     // if a struct or enum then no visibility group
     if (
@@ -100,11 +104,13 @@ const dotAttributeVisibilities = (umlClass: UmlClass): string => {
         // For each attribute of te UML Class
         for (const attribute of umlClass.attributes) {
             if (
+                !options.hideInternals &&
                 vizGroup === 'Private' &&
                 attribute.visibility === Visibility.Private
             ) {
                 attributes.push(attribute)
             } else if (
+                !options.hideInternals &&
                 vizGroup === 'Internal' &&
                 attribute.visibility === Visibility.Internal
             ) {
@@ -152,7 +158,10 @@ const dotAttributes = (
     return dotString
 }
 
-const dotOperatorVisibilities = (umlClass: UmlClass): string => {
+const dotOperatorVisibilities = (
+    umlClass: UmlClass,
+    options: { hideInternals?: boolean } = {}
+): string => {
     let dotString = '| '
 
     // For each visibility group
@@ -162,11 +171,13 @@ const dotOperatorVisibilities = (umlClass: UmlClass): string => {
         // For each attribute of te UML Class
         for (const operator of umlClass.operators) {
             if (
+                !options.hideInternals &&
                 vizGroup === 'Private' &&
                 operator.visibility === Visibility.Private
             ) {
                 operators.push(operator)
             } else if (
+                !options.hideInternals &&
                 vizGroup === 'Internal' &&
                 operator.visibility === Visibility.Internal
             ) {
