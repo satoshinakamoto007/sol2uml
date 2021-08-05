@@ -49,7 +49,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
 
 Options:
   -b, --baseContractNames <value>              only output contracts connected to these comma separated base contract names
-  -f, --outputFormat <value>                   output file format: svg, png, dot or all (default: "svg")
+  -f, --outputFormat <value>                   output file format: svg, png, sol, dot or all (default: "svg")
   -o, --outputFileName <value>                 output file name
   -d, --depthLimit <depth>                     number of sub folders that will be recursively searched for Solidity files. Default -1 is unlimited (default: -1)
   -i, --ignoreFilesOrFolders <filesOrFolders>  comma separated list of files or folders to ignore

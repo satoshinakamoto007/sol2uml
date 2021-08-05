@@ -225,6 +225,22 @@ export function convertDot2Svg(dot: string): any {
     }
 }
 
+export function writeSolidity(code: string, filename = 'solidity') {
+    const outputFile = filename + '.sol'
+    debug(`About to write Solidity to file ${outputFile}`)
+
+    writeFile(outputFile, code, (err) => {
+        if (err) {
+            throw new VError(
+                err,
+                `Failed to write Solidity to file ${outputFile}`
+            )
+        } else {
+            console.log(`Solidity written to ${outputFile}`)
+        }
+    })
+}
+
 export function writeDot(dot: string, dotFilename = 'classDiagram.dot') {
     debug(`About to write Dot file to ${dotFilename}`)
 

@@ -14,6 +14,13 @@ export declare class EtherscanParser {
      */
     getUmlClasses(contractAddress: string): Promise<UmlClass[]>;
     /**
+     * Get Solidity code from Etherscan for a contract and merges all files
+     * into one long string of Solidity code.
+     * @param contractAddress Ethereum contract address with a 0x prefix
+     * @return Promise string of Solidity code
+     */
+    getSolidityCode(contractAddress: string): Promise<string>;
+    /**
      * Parses Solidity source code into an ASTNode object
      * @param sourceCode Solidity source code
      * @return Promise with an ASTNode object from @solidity-parser/parser

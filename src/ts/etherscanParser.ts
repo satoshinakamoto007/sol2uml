@@ -47,6 +47,22 @@ export class EtherscanParser {
     }
 
     /**
+     * Get Solidity code from Etherscan for a contract and merges all files
+     * into one long string of Solidity code.
+     * @param contractAddress Ethereum contract address with a 0x prefix
+     * @return Promise string of Solidity code
+     */
+    async getSolidityCode(contractAddress: string): Promise<string> {
+        const sourceFiles = await this.getSourceCode(contractAddress)
+
+        let solidityCode = ''
+        sourceFiles.forEach((sourceFile) => {
+            solidityCode += sourceFile.code
+        })
+        return solidityCode
+    }
+
+    /**
      * Parses Solidity source code into an ASTNode object
      * @param sourceCode Solidity source code
      * @return Promise with an ASTNode object from @solidity-parser/parser

@@ -31,7 +31,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
     )
     .option(
         '-f, --outputFormat <value>',
-        'output file format: svg, png, dot or all',
+        'output file format: svg, png, sol, dot or all',
         'svg'
     )
     .option('-o, --outputFileName <value>', 'output file name')
@@ -74,7 +74,7 @@ if (options.verbose) {
 }
 
 // This function needs to be loaded after the DEBUG env variable has been set
-import { generateFilesFromUmlClasses } from './converter'
+import { generateFilesFromUmlClasses, writeSolidity } from './converter'
 
 async function sol2uml() {
     let fileFolderAddress: string
@@ -97,6 +97,16 @@ async function sol2uml() {
             options.network
         )
 
+        // If output is Solidity code
+        if (options.outputFormat === 'sol') {
+            const solidityCode = await etherscanParser.getSolidityCode(
+                fileFolderAddress
+            )
+
+            // Write Solidity to the contract address
+            writeSolidity(solidityCode, fileFolderAddress)
+            return
+        }
         umlClasses = await etherscanParser.getUmlClasses(fileFolderAddress)
     } else {
         const depthLimit = parseInt(options.depthLimit)
