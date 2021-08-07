@@ -6,7 +6,15 @@ import { VError } from 'verror'
 import { convertNodeToUmlClass } from './parser'
 import { UmlClass } from './umlClass'
 
-const networks = <const>['mainnet', 'ropsten', 'kovan', 'rinkeby', 'goerli']
+const networks = <const>[
+    'mainnet',
+    'ropsten',
+    'kovan',
+    'rinkeby',
+    'goerli',
+    'polygon',
+    'bsc',
+]
 type Network = typeof networks[number]
 
 export class EtherscanParser {
@@ -22,6 +30,12 @@ export class EtherscanParser {
             )
         } else if (network === 'mainnet') {
             this.url = 'https://api.etherscan.io/api'
+        } else if (network === 'polygon') {
+            this.url = 'https://api.polygonscan.com/api'
+            this.apikey = 'AMHGNTV5A7XYGX2M781JB3RC1DZFVRWQEB'
+        } else if (network === 'bsc') {
+            this.url = 'https://api.bscscan.com/api'
+            this.apikey = 'APYH49FXVY9UA3KTDI6F4WP3KPIC86NITN'
         } else {
             this.url = `https://api-${network}.etherscan.io/api`
         }

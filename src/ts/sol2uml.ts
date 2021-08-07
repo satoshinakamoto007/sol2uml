@@ -46,7 +46,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
     )
     .option(
         '-n, --network <network>',
-        'mainnet, ropsten, kovan, rinkeby or goerli',
+        'mainnet, polygon, bsc, ropsten, kovan, rinkeby or goerli',
         'mainnet'
     )
     .option('-a, --hideAttributes', 'hide class and interface attributes')

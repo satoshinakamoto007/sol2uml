@@ -53,7 +53,7 @@ Options:
   -o, --outputFileName <value>                 output file name
   -d, --depthLimit <depth>                     number of sub folders that will be recursively searched for Solidity files. Default -1 is unlimited (default: -1)
   -i, --ignoreFilesOrFolders <filesOrFolders>  comma separated list of files or folders to ignore
-  -n, --network <network>                      mainnet, ropsten, kovan, rinkeby or goerli (default: "mainnet")
+  -n, --network <network>                      mainnet, polygon, bsc, ropsten, kovan, rinkeby or goerli (default: "mainnet")
   -a, --hideAttributes                         hide class and interface attributes
   -p, --hideOperators                          hide class and interface operators/functions
   -e, --hideEnums                              hide enum types

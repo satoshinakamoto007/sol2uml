@@ -1,6 +1,6 @@
 import { ASTNode } from '@solidity-parser/parser/dist/src/ast-types';
 import { UmlClass } from './umlClass';
-declare const networks: readonly ["mainnet", "ropsten", "kovan", "rinkeby", "goerli"];
+declare const networks: readonly ["mainnet", "ropsten", "kovan", "rinkeby", "goerli", "polygon", "bsc"];
 declare type Network = typeof networks[number];
 export declare class EtherscanParser {
     protected apikey: string;
