@@ -187,7 +187,11 @@ function addAssociationToDot(
             (sourceUmlClass.stereotype === ClassStereotype.Library ||
                 targetUmlClass.stereotype === ClassStereotype.Library)) ||
         (classOptions.hideInterfaces &&
-            targetUmlClass.stereotype === ClassStereotype.Interface)
+            targetUmlClass.stereotype === ClassStereotype.Interface) ||
+        (classOptions.hideStructs &&
+            targetUmlClass.stereotype === ClassStereotype.Struct) ||
+        (classOptions.hideEnums &&
+            targetUmlClass.stereotype === ClassStereotype.Enum)
     ) {
         return ''
     }

@@ -23,12 +23,15 @@ export const dotUmlClass = (
     umlClass: UmlClass,
     options: ClassOptions = {}
 ): string => {
-    // do not include library or interface classes if hidden
+    // do not include library, interface, struct or enum classes if hidden
     if (
         (options.hideLibraries &&
             umlClass.stereotype === ClassStereotype.Library) ||
         (options.hideInterfaces &&
-            umlClass.stereotype === ClassStereotype.Interface)
+            umlClass.stereotype === ClassStereotype.Interface) ||
+        (options.hideStructs &&
+            umlClass.stereotype === ClassStereotype.Struct) ||
+        (options.hideEnums && umlClass.stereotype === ClassStereotype.Enum)
     ) {
         return ''
     }
