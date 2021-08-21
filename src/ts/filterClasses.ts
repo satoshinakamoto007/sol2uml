@@ -1,5 +1,4 @@
 import { Dijkstra, Edge, WeightedDiGraph } from 'js-graph-algorithms'
-
 import { UmlClass } from './umlClass'
 
 export const classesConnectedToBaseContracts = (

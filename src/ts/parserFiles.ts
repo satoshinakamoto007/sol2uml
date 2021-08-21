@@ -5,7 +5,7 @@ import { ASTNode } from '@solidity-parser/parser/dist/src/ast-types'
 import { parse } from '@solidity-parser/parser'
 import { VError } from 'verror'
 
-import { convertNodeToUmlClass } from './parser'
+import { convertAST2UmlClasses } from './converterAST2Classes'
 import { UmlClass } from './umlClass'
 
 const debug = require('debug')('sol2uml')
@@ -28,7 +28,7 @@ export const parseUmlClassesFromFiles = async (
 
         const relativePath = relative(process.cwd(), file)
 
-        const umlClass = convertNodeToUmlClass(node, relativePath, true)
+        const umlClass = convertAST2UmlClasses(node, relativePath, true)
         umlClasses = umlClasses.concat(umlClass)
     }
 
@@ -123,10 +123,18 @@ export function getSolidityFilesFromFolderOrFile(
 }
 
 export function parseSolidityFile(fileName: string): ASTNode {
+    let solidityCode: string
     try {
-        const solidityCode = readFileSync(fileName, 'utf8')
+        solidityCode = readFileSync(fileName, 'utf8')
+    } catch (err) {
+        throw new VError(err, `Failed to read solidity file ${fileName}.`)
+    }
+    try {
         return parse(solidityCode, {})
     } catch (err) {
-        throw new VError(err, `Failed to parse solidity file ${fileName}.`)
+        throw new VError(
+            err,
+            `Failed to parse solidity code in file ${fileName}.`
+        )
     }
 }

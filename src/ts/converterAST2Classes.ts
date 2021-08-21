@@ -5,6 +5,7 @@ import {
     EnumDefinition,
     EnumValue,
     Expression,
+    NumberLiteral,
     StructDefinition,
     TypeName,
     UserDefinedTypeName,
@@ -14,6 +15,8 @@ import {
 import * as path from 'path'
 
 import {
+    Attribute,
+    AttributeType,
     ClassStereotype,
     OperatorStereotype,
     Parameter,
@@ -33,7 +36,7 @@ import {
 
 const debug = require('debug')('sol2uml')
 
-export function convertNodeToUmlClass(
+export function convertAST2UmlClasses(
     node: ASTNode,
     relativePath: string,
     filesystem: boolean = false
@@ -124,9 +127,11 @@ function parseStructDefinition(
     node: StructDefinition
 ): UmlClass {
     node.members.forEach((member: VariableDeclaration) => {
+        const [type, attributeType] = parseTypeName(member.typeName)
         umlClass.attributes.push({
             name: member.name,
-            type: parseTypeName(member.typeName),
+            type,
+            attributeType,
         })
     })
 
@@ -174,10 +179,17 @@ function parseContractDefinition(
     node.subNodes.forEach((subNode) => {
         if (isStateVariableDeclaration(subNode)) {
             subNode.variables.forEach((variable: VariableDeclaration) => {
+                const [type, attributeType] = parseTypeName(variable.typeName)
+                const valueStore =
+                    // @ts-ignore isImmutable is available at runtime but not in VariableDeclaration
+                    variable.isDeclaredConst || variable.isImmutable
+
                 umlClass.attributes.push({
                     visibility: parseVisibility(variable.visibility),
                     name: variable.name,
-                    type: parseTypeName(variable.typeName),
+                    type,
+                    attributeType,
+                    compiled: valueStore,
                 })
             })
 
@@ -266,12 +278,14 @@ function parseContractDefinition(
             // Recursively parse event parameters for associations
             umlClass = addAssociations(subNode.parameters, umlClass)
         } else if (isStructDefinition(subNode)) {
-            let structMembers: Parameter[] = []
+            let structMembers: Attribute[] = []
 
             subNode.members.forEach((member) => {
+                const [type, attributeType] = parseTypeName(member.typeName)
                 structMembers.push({
                     name: member.name,
-                    type: parseTypeName(member.typeName),
+                    type,
+                    attributeType,
                 })
             })
 
@@ -510,23 +524,31 @@ function parseVisibility(visibility: string): Visibility {
     }
 }
 
-function parseTypeName(typeName: TypeName): string {
+function parseTypeName(typeName: TypeName): [string, AttributeType] {
     switch (typeName.type) {
         case 'ElementaryTypeName':
-            return typeName.name
+            return [typeName.name, AttributeType.Elementary]
         case 'UserDefinedTypeName':
-            return typeName.namePath
+            return [typeName.namePath, AttributeType.UserDefined]
         case 'FunctionTypeName':
             // TODO add params and return type
-            return typeName.type + '\\(\\)'
+            return [typeName.type + '\\(\\)', AttributeType.Function]
         case 'ArrayTypeName':
-            return parseTypeName(typeName.baseTypeName) + '[]'
+            const [arrayElementType] = parseTypeName(typeName.baseTypeName)
+            // Bug in Solidity parser's ArrayTypeName
+            // ArrayTypeName.length is `Expression | null`
+            // but should be `NumberLiteral | null`
+            const length = (typeName.length as NumberLiteral)?.number || ''
+            return [arrayElementType + '[' + length + ']', AttributeType.Array]
         case 'Mapping':
             const key =
                 (<ElementaryTypeName>typeName.keyType)?.name ||
                 (<UserDefinedTypeName>typeName.keyType)?.namePath
-            const value = parseTypeName(typeName.valueType)
-            return 'mapping\\(' + key + '=\\>' + value + '\\)'
+            const [valueType] = parseTypeName(typeName.valueType)
+            return [
+                'mapping\\(' + key + '=\\>' + valueType + '\\)',
+                AttributeType.Mapping,
+            ]
         default:
             throw Error(`Invalid typeName ${typeName}`)
     }
@@ -540,9 +562,10 @@ function parseParameters(params: VariableDeclaration[]): Parameter[] {
     let parameters: Parameter[] = []
 
     for (const param of params) {
+        const [type] = parseTypeName(param.typeName)
         parameters.push({
             name: param.name,
-            type: parseTypeName(param.typeName),
+            type,
         })
     }
 

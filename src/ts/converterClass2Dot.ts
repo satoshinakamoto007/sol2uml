@@ -19,7 +19,7 @@ export interface ClassOptions {
     hideInternals?: boolean
 }
 
-export const dotUmlClass = (
+export const convertClass2Dot = (
     umlClass: UmlClass,
     options: ClassOptions = {}
 ): string => {

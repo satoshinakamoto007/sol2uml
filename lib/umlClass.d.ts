@@ -22,14 +22,23 @@ export declare enum OperatorStereotype {
     Fallback = 4,
     Abstract = 5
 }
-export interface Parameter {
-    name?: string;
-    type: string;
+export declare enum AttributeType {
+    Elementary = 0,
+    UserDefined = 1,
+    Function = 2,
+    Array = 3,
+    Mapping = 4
 }
 export interface Attribute {
     visibility?: Visibility;
     name: string;
     type?: string;
+    attributeType?: AttributeType;
+    compiled?: boolean;
+}
+export interface Parameter {
+    name?: string;
+    type: string;
 }
 export interface Operator extends Attribute {
     stereotype?: OperatorStereotype;
@@ -56,6 +65,9 @@ export interface ClassProperties {
     enums?: {
         [name: string]: string[];
     };
+    structs?: {
+        [name: string]: Attribute[];
+    };
     attributes?: Attribute[];
     operators?: Operator[];
     associations?: {
@@ -76,11 +88,16 @@ export declare class UmlClass implements ClassProperties {
         [name: string]: string[];
     };
     structs: {
-        [name: string]: Parameter[];
+        [name: string]: Attribute[];
     };
     associations: {
         [name: string]: Association;
     };
     constructor(properties: ClassProperties);
     addAssociation(association: Association): void;
+    /**
+     * Gets the immediate parent contracts this class inherits from.
+     * Does not include any grand parent associations. That has to be done recursively.
+     */
+    getParentContracts(): Association[];
 }

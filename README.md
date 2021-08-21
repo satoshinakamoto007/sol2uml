@@ -154,9 +154,9 @@ A Solidity variable becomes an attribute in UML and a Solidity function becomes 
 
 Lines:
 - Solid lines for
-    - link the contract types of storage (state) variables. This can be linked to contracts, interfaces or libraries.
+    - link the contract types of storage (state) variables. This can be linked to contracts, interfaces, libraries or file level structs and enums.
     - generalisations of contracts and abstract contracts.
-    - aggregated structs and enums
+    - aggregated contract level structs and enums.
 - Dashed lines for
     - generalisations of interfaces.
     - types of memory variables.
@@ -164,7 +164,7 @@ Lines:
 Heads/Tails:
 - An empty triangle head for generalisations of contracts, interfaces and abstract contracts.
 - An open arrow head for storage or memory variable dependencies
-- A diamond tail for aggregations of structs and enums
+- A diamond tail for aggregations of contract level structs and enums
 
 # Contribution
 
