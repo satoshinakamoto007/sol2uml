@@ -7,5 +7,6 @@ export interface ClassOptions {
     hideLibraries?: boolean;
     hideInterfaces?: boolean;
     hideInternals?: boolean;
+    hideFilename?: boolean;
 }
 export declare const convertClass2Dot: (umlClass: UmlClass, options?: ClassOptions) => string;

@@ -17,6 +17,7 @@ export interface ClassOptions {
     hideLibraries?: boolean
     hideInterfaces?: boolean
     hideInternals?: boolean
+    hideFilename?: boolean
 }
 
 export const convertClass2Dot = (
@@ -36,7 +37,10 @@ export const convertClass2Dot = (
         return ''
     }
 
-    let dotString = `\n${umlClass.id} [label="{${dotClassTitle(umlClass)}`
+    let dotString = `\n${umlClass.id} [label="{${dotClassTitle(
+        umlClass,
+        options
+    )}`
 
     // Add attributes
     if (!options.hideAttributes) {
@@ -61,8 +65,14 @@ export const convertClass2Dot = (
     return dotString
 }
 
-const dotClassTitle = (umlClass: UmlClass): string => {
+const dotClassTitle = (
+    umlClass: UmlClass,
+    options: { hideFilename?: boolean } = {}
+): string => {
     let stereoName: string = ''
+    const relativePath = options.hideFilename
+        ? ''
+        : `\\n${umlClass.relativePath}`
     switch (umlClass.stereotype) {
         case ClassStereotype.Abstract:
             stereoName = 'Abstract'
@@ -81,10 +91,10 @@ const dotClassTitle = (umlClass: UmlClass): string => {
             break
         default:
             // Contract or undefined stereotype will just return the UmlClass name
-            return umlClass.name
+            return `${umlClass.name}${relativePath}`
     }
 
-    return `\\<\\<${stereoName}\\>\\>\\n${umlClass.name}`
+    return `\\<\\<${stereoName}\\>\\>\\n${umlClass.name}${relativePath}`
 }
 
 const dotAttributeVisibilities = (

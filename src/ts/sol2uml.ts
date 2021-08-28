@@ -58,7 +58,7 @@ sol2uml class --help
             .default('mainnet')
     )
     .option('-k, --apiKey <key>', 'Etherscan, Polygonscan or BscScan API key')
-    .option('-v, --verbose', 'run with debugging statements')
+    .option('-v, --verbose', 'run with debugging statements', false)
 
 program
     .command('class', { isDefault: true })
@@ -85,20 +85,31 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
         '-b, --baseContractNames <value>',
         'only output contracts connected to these comma separated base contract names'
     )
-    .option('-c, --clusterFolders', 'cluster contracts into source folders')
-    .option('-a, --hideAttributes', 'hide class and interface attributes')
     .option(
-        '-p, --hideOperators',
-        'hide class and interface operators/functions'
+        '-c, --clusterFolders',
+        'cluster contracts into source folders',
+        false
     )
-    .option('-e, --hideEnums', 'hide enum types')
-    .option('-s, --hideStructs ', 'hide data structures')
-    .option('-l, --hideLibraries ', 'hide libraries')
-    .option('-t, --hideInterfaces ', 'hide interfaces')
     .option(
-        '-r, --hideInternals',
-        'hide private and internal attributes and operators'
+        '-ha, --hideAttributes',
+        'hide class and interface attributes/variables',
+        false
     )
+    .option(
+        '-ho, --hideOperators',
+        'hide class and interface operators/functions',
+        false
+    )
+    .option(
+        '-hp, --hidePrivates',
+        'hide private and internal attributes and operators',
+        false
+    )
+    .option('-he, --hideEnums', 'hide enum types', false)
+    .option('-hs, --hideStructs', 'hide data structures', false)
+    .option('-hl, --hideLibraries', 'hide libraries', false)
+    .option('-hi, --hideInterfaces', 'hide interfaces', false)
+    .option('-hf, --hideFilename', 'hide relative path and file name', false)
     .action(async (fileFolderAddress, options, command) => {
         try {
             const combinedOptions = {

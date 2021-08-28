@@ -55,18 +55,25 @@ export const classesConnectedToBaseContract = (
 function loadGraph(umlClasses: UmlClass[]): WeightedDiGraph {
     const graph = new WeightedDiGraph(umlClasses.length) // 6 is the number vertices in the graph
 
-    for (const umlClass of umlClasses) {
-        for (const association of Object.values(umlClass.associations)) {
+    for (const sourceUmlClass of umlClasses) {
+        for (const association of Object.values(sourceUmlClass.associations)) {
             // Find the first UML Class that matches the target class name
-            const targetUmlClass = umlClasses.find((_umlClass) => {
-                return association.targetUmlClassName === _umlClass.name
+            const targetUmlClass = umlClasses.find((targetUmlClass) => {
+                return (
+                    targetUmlClass.name === association.targetUmlClassName &&
+                    (sourceUmlClass.importedPaths.includes(
+                        targetUmlClass.absolutePath
+                    ) ||
+                        sourceUmlClass.absolutePath ===
+                            targetUmlClass.absolutePath)
+                )
             })
 
             if (!targetUmlClass) {
                 continue
             }
 
-            graph.addEdge(new Edge(umlClass.id, targetUmlClass.id, 1))
+            graph.addEdge(new Edge(sourceUmlClass.id, targetUmlClass.id, 1))
         }
     }
 
