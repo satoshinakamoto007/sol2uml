@@ -8,6 +8,7 @@ import {
     UmlClass,
     Visibility,
 } from './umlClass'
+import { isAddress } from './utils/regEx'
 
 export interface ClassOptions {
     hideAttributes?: boolean
@@ -70,9 +71,10 @@ const dotClassTitle = (
     options: { hideFilename?: boolean } = {}
 ): string => {
     let stereoName: string = ''
-    const relativePath = options.hideFilename
-        ? ''
-        : `\\n${umlClass.relativePath}`
+    const relativePath =
+        options.hideFilename || isAddress(umlClass.relativePath)
+            ? ''
+            : `\\n${umlClass.relativePath}`
     switch (umlClass.stereotype) {
         case ClassStereotype.Abstract:
             stereoName = 'Abstract'
