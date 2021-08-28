@@ -3,7 +3,6 @@ import { Attribute, AttributeType, ClassStereotype, UmlClass } from './umlClass'
 export enum StorageType {
     Contract,
     Struct,
-    Enum,
 }
 
 export interface Storage {
@@ -13,8 +12,8 @@ export interface Storage {
     byteOffset: number
     type: string
     variable: string
+    contractName?: string
     value?: string
-    struct?: Storage
 }
 
 export interface Slots {
@@ -22,6 +21,7 @@ export interface Slots {
     address?: string
     type: StorageType
     storages: Storage[]
+    dependencies: Slots[]
 }
 
 export const convertClasses2Slots = (
@@ -37,7 +37,7 @@ export const convertClasses2Slots = (
         throw Error(`Failed to find contract with name "${contractName}"`)
     }
 
-    const storages = parseStorage(umlClass, [], umlClasses)
+    const storages = parseStorage(umlClass, umlClasses, [], [])
 
     return {
         name: contractName,
@@ -46,14 +46,23 @@ export const convertClasses2Slots = (
                 ? StorageType.Struct
                 : StorageType.Contract,
         storages,
+        dependencies: [],
     }
 }
 
+/**
+ * Recursively parses the storage slots for a given contract.
+ * @param umlClass contract or file level struct
+ * @param umlClasses other contracts, structs and enums that may be a type of a storage variable.
+ * @param storages mutable array of storage slots that is appended to
+ */
 const parseStorage = (
     umlClass: UmlClass,
+    umlClasses: UmlClass[],
     storages: Storage[],
-    umlClasses: UmlClass[]
+    dependencies: Slots[]
 ) => {
+    // Add storage slots from inherited contracts first.
     // Get immediate parent contracts that the class inherits from
     const parentContracts = umlClass.getParentContracts()
     parentContracts.forEach((parent) => {
@@ -64,10 +73,11 @@ const parseStorage = (
             throw Error(
                 `Failed to find parent contract ${parent.targetUmlClassName} of ${umlClass.name}`
             )
-        parseStorage(parentClass, storages, umlClasses)
+        // recursively parse inherited contract
+        parseStorage(parentClass, umlClasses, storages, dependencies)
     })
 
-    // For each attribute
+    // parse storage for each attribute
     umlClass.attributes.forEach((attribute) => {
         // Ignore any attributes that are constants or immutable
         if (attribute.compiled) return
@@ -86,12 +96,12 @@ const parseStorage = (
             const nextFromSlot = storages.length > 0 ? lastToSlot + 1 : 0
             storages.push({
                 fromSlot: nextFromSlot,
-                // div by 33 and not 32 as 32 is still in the same slot
-                toSlot: nextFromSlot + Math.floor(byteSize / 33),
+                toSlot: nextFromSlot + Math.floor((byteSize + 1) / 32),
                 byteSize,
                 byteOffset: 0,
                 type: attribute.type,
                 variable: attribute.name,
+                contractName: umlClass.name,
             })
         } else {
             storages.push({
@@ -101,6 +111,7 @@ const parseStorage = (
                 byteOffset: nextOffset,
                 type: attribute.type,
                 variable: attribute.name,
+                contractName: umlClass.name,
             })
         }
     })
@@ -253,7 +264,6 @@ export const calcStorageByteSize = (
                 return bitSize / 8
         }
     }
-
     throw new Error(
         `Failed to calc bytes size of attribute with name "${attribute.name}" and type ${attribute.type}`
     )

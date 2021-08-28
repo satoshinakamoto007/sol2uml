@@ -18,6 +18,28 @@ struct SubTwoSlots {
     bool flag2;
 }
 
+
+struct ContractLevelStruct0 {
+    uint256 param1;
+    bool param2;
+}
+
+struct ContractLevelStruct1 {
+    uint256 param1;
+    address param2;
+    uint8 param3;
+    bytes1 param4;
+}
+
+struct ContractLevelStruct2 {
+    ContractLevelStruct0 param1;
+    ContractLevelStruct1 param2;
+}
+
+struct ContractLevelStruct11 {
+    ContractLevelStruct1 param1;
+}
+
 enum Severity {
     Low,
     Medium,
@@ -40,17 +62,10 @@ interface IERC20 {
 contract GrandParent {
     bool initGP;
     address grandParent;
-
-    struct FlagsStruct {
-        bool flag1;
-        bool[2] flags;
-        bool flag2;
-    }
 }
 
 contract Parent is GrandParent {
     bool initP;
-    bool initialized;
     address parent;
 }
 
@@ -72,6 +87,12 @@ contract TestStorage is Parent, Parent2 {
         uint16 num2;
     }
 
+    struct FlagsStruct {
+        bool flag1;
+        bool[2] flags;
+        bool flag2;
+    }
+
     enum Status {
         Open,
         Resolved
@@ -79,7 +100,8 @@ contract TestStorage is Parent, Parent2 {
 
     uint256 public constant SCALE = 1e18;
     uint256 internal constant DIVISOR = 1e18;
-    address public immutable SuperUser;
+    address public immutable superUser;
+    address internal immutable superUser2;
 
     address owner;
     IERC20 token;
@@ -132,5 +154,6 @@ contract TestStorage is Parent, Parent2 {
 
     constructor(address _superUser) {
         superUser = _superUser;
+        superUser2 = _superUser;
     }
 }

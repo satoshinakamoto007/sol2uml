@@ -1,4 +1,4 @@
-import { Slots } from './converterClasses2Slots'
+import { Slots, Storage } from './converterClasses2Slots'
 
 const debug = require('debug')('sol2uml:storage')
 
@@ -35,7 +35,7 @@ node [shape=record, style=filled, fillcolor=gray95]`
             i + 1 < slots.storages.length ? slots.storages[i + 1] : undefined
 
         if (i === 0) {
-            dotString += '} | {type: variable (bytes) '
+            dotString += '} | {type: \\<inherited contract\\>.variable (bytes) '
         }
         // if next storage is in the same slot
         // and storage is the first in the slot
@@ -43,7 +43,7 @@ node [shape=record, style=filled, fillcolor=gray95]`
             nextStorage?.fromSlot === storage.fromSlot &&
             storage.byteOffset === 0
         ) {
-            dotString += `| { ${storage.type}: ${storage.variable} (${storage.byteSize}) `
+            dotString += `| {${dotVariable(storage, slots.name)} `
             return
         }
         // if last storage was on the same slot
@@ -52,12 +52,12 @@ node [shape=record, style=filled, fillcolor=gray95]`
             lastStorage?.fromSlot === storage.fromSlot &&
             nextStorage?.fromSlot > storage.fromSlot
         ) {
-            dotString += `| ${storage.type}: ${storage.variable} (${storage.byteSize}) }`
+            dotString += `| ${dotVariable(storage, slots.name)}} `
             return
         }
 
         // If storage covers a whole slot or is not at the start or end of a slot
-        dotString += `| ${storage.type}: ${storage.variable} (${storage.byteSize}) `
+        dotString += `| ${dotVariable(storage, slots.name)} `
     })
 
     // Need to close off the last label
@@ -69,4 +69,11 @@ node [shape=record, style=filled, fillcolor=gray95]`
     debug(dotString)
 
     return dotString
+}
+
+const dotVariable = (storage: Storage, contractName: string): string => {
+    if (storage.contractName !== contractName) {
+        return ` ${storage.type}: ${storage.contractName}.${storage.variable} (${storage.byteSize})`
+    }
+    return `${storage.type}: ${storage.variable} (${storage.byteSize})`
 }
