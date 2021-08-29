@@ -12,14 +12,17 @@ export interface Storage {
     variable: string;
     contractName?: string;
     value?: string;
+    structSlotsId?: number;
+    enumId?: number;
 }
 export interface Slots {
+    id: number;
     name: string;
     address?: string;
     type: StorageType;
     storages: Storage[];
-    dependencies: Slots[];
 }
-export declare const convertClasses2Slots: (contractName: string, umlClasses: UmlClass[]) => Slots;
+export declare const convertClasses2Slots: (contractName: string, umlClasses: UmlClass[], structSlots?: Slots[]) => Slots;
+export declare const parseStructSlots: (attribute: Attribute, otherClasses: UmlClass[], structSlots: Slots[]) => Slots | undefined;
 export declare const calcStorageByteSize: (attribute: Attribute, umlClass: UmlClass, otherClasses: UmlClass[]) => number;
 export declare const isElementary: (type: string) => boolean;

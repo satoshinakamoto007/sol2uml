@@ -4,16 +4,15 @@ import { convertUmlClasses2Dot } from './converterClasses2Dot'
 import { parserUmlClasses } from './parserGeneral'
 import { EtherscanParser } from './parserEtherscan'
 import { classesConnectedToBaseContracts } from './filterClasses'
-
-const debugControl = require('debug')
-const debug = require('debug')('sol2uml')
-
 import { Command, Option } from 'commander'
-import { convertClasses2Slots } from './converterClasses2Slots'
-import { convertSlots2Dot } from './converterSlots2Dot'
+import { convertClasses2Slots, Slots } from './converterClasses2Slots'
+import { convertAllSlots2Dot } from './converterSlots2Dot'
 import { isAddress } from './utils/regEx'
 import { writeOutputFiles, writeSolidity } from './writerFiles'
 const program = new Command()
+
+const debugControl = require('debug')
+const debug = require('debug')('sol2uml')
 
 program
     .usage(
@@ -168,24 +167,29 @@ program
                 ...command.parent._optionValues,
                 ...options,
             }
-            debug(`storage ${fileFolderAddress} ${combinedOptions}`)
 
             const { umlClasses, contractName } = await parserUmlClasses(
                 fileFolderAddress,
                 combinedOptions
             )
 
+            const filteredUmlClasses = classesConnectedToBaseContracts(
+                umlClasses,
+                [combinedOptions.contractName || contractName]
+            )
+
+            const structSlots: Slots[] = []
             const slots = convertClasses2Slots(
                 combinedOptions.contractName || contractName,
-                umlClasses
+                filteredUmlClasses,
+                structSlots
             )
             if (isAddress(fileFolderAddress)) {
                 slots.address = fileFolderAddress
             }
             debug(slots)
 
-            const dotString = convertSlots2Dot(slots)
-            debug(dotString)
+            const dotString = convertAllSlots2Dot(slots, structSlots)
 
             await writeOutputFiles(
                 dotString,

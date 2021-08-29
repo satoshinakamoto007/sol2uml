@@ -14,19 +14,24 @@ export interface Storage {
     variable: string
     contractName?: string
     value?: string
+    structSlotsId?: number
+    enumId?: number
 }
 
 export interface Slots {
+    id: number
     name: string
     address?: string
     type: StorageType
     storages: Storage[]
-    dependencies: Slots[]
 }
+
+let slotId = 0
 
 export const convertClasses2Slots = (
     contractName: string,
-    umlClasses: UmlClass[]
+    umlClasses: UmlClass[],
+    structSlots: Slots[] = []
 ): Slots => {
     // Find the base UML Class from the base contract name
     const umlClass = umlClasses.find(({ name }) => {
@@ -37,16 +42,16 @@ export const convertClasses2Slots = (
         throw Error(`Failed to find contract with name "${contractName}"`)
     }
 
-    const storages = parseStorage(umlClass, umlClasses, [], [])
+    const storages = parseStorage(umlClass, umlClasses, [], structSlots)
 
     return {
+        id: slotId++,
         name: contractName,
         type:
             umlClass.stereotype === ClassStereotype.Struct
                 ? StorageType.Struct
                 : StorageType.Contract,
         storages,
-        dependencies: [],
     }
 }
 
@@ -55,12 +60,13 @@ export const convertClasses2Slots = (
  * @param umlClass contract or file level struct
  * @param umlClasses other contracts, structs and enums that may be a type of a storage variable.
  * @param storages mutable array of storage slots that is appended to
+ * @param structSlots mutable array of struct slots that is appended to
  */
 const parseStorage = (
     umlClass: UmlClass,
     umlClasses: UmlClass[],
     storages: Storage[],
-    dependencies: Slots[]
+    structSlots: Slots[]
 ) => {
     // Add storage slots from inherited contracts first.
     // Get immediate parent contracts that the class inherits from
@@ -74,7 +80,7 @@ const parseStorage = (
                 `Failed to find parent contract ${parent.targetUmlClassName} of ${umlClass.name}`
             )
         // recursively parse inherited contract
-        parseStorage(parentClass, umlClasses, storages, dependencies)
+        parseStorage(parentClass, umlClasses, storages, structSlots)
     })
 
     // parse storage for each attribute
@@ -83,6 +89,14 @@ const parseStorage = (
         if (attribute.compiled) return
 
         const byteSize = calcStorageByteSize(attribute, umlClass, umlClasses)
+
+        // find any dependent structs
+        const linkedStructSlots = parseStructSlots(
+            attribute,
+            umlClasses,
+            structSlots
+        )
+        const structSlotsId = linkedStructSlots?.id
 
         // Get the toSlot of the last storage item
         let lastToSlot = 0
@@ -96,12 +110,13 @@ const parseStorage = (
             const nextFromSlot = storages.length > 0 ? lastToSlot + 1 : 0
             storages.push({
                 fromSlot: nextFromSlot,
-                toSlot: nextFromSlot + Math.floor((byteSize + 1) / 32),
+                toSlot: nextFromSlot + Math.floor((byteSize - 1) / 33),
                 byteSize,
                 byteOffset: 0,
                 type: attribute.type,
                 variable: attribute.name,
                 contractName: umlClass.name,
+                structSlotsId,
             })
         } else {
             storages.push({
@@ -112,11 +127,60 @@ const parseStorage = (
                 type: attribute.type,
                 variable: attribute.name,
                 contractName: umlClass.name,
+                structSlotsId,
             })
         }
     })
 
     return storages
+}
+
+export const parseStructSlots = (
+    attribute: Attribute,
+    otherClasses: UmlClass[],
+    structSlots: Slots[]
+): Slots | undefined => {
+    if (attribute.attributeType === AttributeType.UserDefined) {
+        // Have we already created the structSlots?
+        const existingStructSlot = structSlots.find(
+            (dep) => dep.name === attribute.type
+        )
+        if (existingStructSlot) {
+            return existingStructSlot
+        }
+        // Is the user defined type linked to another Contract, Struct or Enum?
+        const dependentClass = otherClasses.find(({ name }) => {
+            return name === attribute.type
+        })
+        if (!dependentClass) {
+            throw Error(`Failed to find user defined type "${attribute.type}"`)
+        }
+
+        if (dependentClass.stereotype === ClassStereotype.Struct) {
+            const storages = parseStorage(
+                dependentClass,
+                otherClasses,
+                [],
+                structSlots
+            )
+            const newStructSlots = {
+                id: slotId++,
+                name: attribute.type,
+                type: StorageType.Struct,
+                storages,
+            }
+            structSlots.push(newStructSlots)
+
+            return newStructSlots
+        }
+        return undefined
+    }
+    if (attribute.attributeType === AttributeType.Mapping) {
+        return undefined
+    }
+    if (attribute.attributeType === AttributeType.Array) {
+    }
+    return undefined
 }
 
 // Calculates the storage size of an attribute in bytes
@@ -162,10 +226,6 @@ export const calcStorageByteSize = (
                 umlClass,
                 otherClasses
             )
-            // Anything over 16 bytes, like an address, will take a whole 32 byte slot
-            if (elementSize > 16 && elementSize < 32) {
-                elementSize = 32
-            }
         } else {
             const elementAttribute: Attribute = {
                 attributeType: AttributeType.UserDefined,
@@ -178,6 +238,10 @@ export const calcStorageByteSize = (
                 otherClasses
             )
         }
+        // Anything over 16 bytes, like an address, will take a whole 32 byte slot
+        if (elementSize > 16 && elementSize < 32) {
+            elementSize = 32
+        }
         const firstDimensionBytes = elementSize * dimensions[0]
         const firstDimensionSlotBytes = Math.ceil(firstDimensionBytes / 32) * 32
         const remainingElements = dimensions
@@ -187,18 +251,7 @@ export const calcStorageByteSize = (
     }
     // If a Struct or Enum
     if (attribute.attributeType === AttributeType.UserDefined) {
-        // recursively look for Structs or Enums at the contract level
-        // including in any inherited contracts
-        const size = calcStructOrEnumByteSize(
-            attribute.type,
-            umlClass,
-            otherClasses
-        )
-        if (size) {
-            return size
-        }
-
-        // Is the user defined type linked to another Contract or file level Struct or Enum?
+        // Is the user defined type linked to another Contract, Struct or Enum?
         const attributeClass = otherClasses.find(({ name }) => {
             return name === attribute.type
         })
@@ -214,15 +267,51 @@ export const calcStorageByteSize = (
             case ClassStereotype.Abstract:
             case ClassStereotype.Interface:
             case ClassStereotype.Library:
-                return 32
+                return 20
             case ClassStereotype.Struct:
                 let structByteSize = 0
                 attributeClass.attributes.forEach((structAttribute) => {
-                    structByteSize += calcStorageByteSize(
+                    // If next attribute is an array, then we need to start in a new slot
+                    if (structAttribute.attributeType === AttributeType.Array) {
+                        structByteSize = Math.ceil(structByteSize / 32) * 32
+                    }
+                    // If next attribute is an struct, then we need to start in a new slot
+                    else if (
+                        structAttribute.attributeType ===
+                        AttributeType.UserDefined
+                    ) {
+                        // UserDefined types can be a struct or enum, so we need to check if it's a struct
+                        const userDefinedClass = otherClasses.find(
+                            ({ name }) => {
+                                return name === structAttribute.type
+                            }
+                        )
+                        if (!userDefinedClass) {
+                            throw Error(
+                                `Failed to find user defined type "${structAttribute.type}" in struct ${attributeClass.name}`
+                            )
+                        }
+                        // If a struct
+                        if (
+                            userDefinedClass.stereotype ===
+                            ClassStereotype.Struct
+                        ) {
+                            structByteSize = Math.ceil(structByteSize / 32) * 32
+                        }
+                    }
+                    const attributeSize = calcStorageByteSize(
                         structAttribute,
                         umlClass,
                         otherClasses
                     )
+                    // check if attribute will fit into the remaining slot
+                    const endCurrentSlot = Math.ceil(structByteSize / 32) * 32
+                    const spaceLeftInSlot = endCurrentSlot - structByteSize
+                    if (attributeSize <= spaceLeftInSlot) {
+                        structByteSize += attributeSize
+                    } else {
+                        structByteSize = endCurrentSlot + attributeSize
+                    }
                 })
                 // structs take whole 32 byte slots so round up to the nearest 32 sized slots
                 return Math.ceil(structByteSize / 32) * 32
@@ -284,59 +373,4 @@ export const isElementary = (type: string): boolean => {
             const result = type.match(/[u]*(int|fixed|bytes)([0-9]+)/)
             return result !== null
     }
-}
-
-const calcStructOrEnumByteSize = (
-    typeName: string,
-    umlClass: UmlClass,
-    otherClasses: UmlClass[]
-): number => {
-    // Is the user defined type linked to a contract level enum
-    const enumType = umlClass.enums[typeName]
-    if (enumType) {
-        return 1
-    }
-
-    // Is the user defined type linked to a contract level struct
-    const structAttributes = umlClass.structs[typeName]
-    if (structAttributes) {
-        let structByteSize = 0
-        structAttributes.forEach((structAttribute) => {
-            // If next attribute is an array, then we need to start in a new slot
-            if (structAttribute.attributeType === AttributeType.Array) {
-                structByteSize = Math.ceil(structByteSize / 32) * 32
-            }
-            structByteSize += calcStorageByteSize(
-                structAttribute,
-                umlClass,
-                otherClasses
-            )
-        })
-        return Math.ceil(structByteSize / 32) * 32
-    }
-
-    // Get immediate parent contracts that the class inherits from
-    const parentContracts = umlClass.getParentContracts()
-    for (const parent of parentContracts) {
-        const parentClass = otherClasses.find(
-            (umlClass) => umlClass.name === parent.targetUmlClassName
-        )
-        if (!parentClass)
-            throw Error(
-                `Failed to find parent contract ${parent.targetUmlClassName} of ${umlClass.name}`
-            )
-
-        // recursively see if the User Defined type is in an inherited contract
-        const size = calcStructOrEnumByteSize(
-            typeName,
-            parentClass,
-            otherClasses
-        )
-        if (size) {
-            return size
-        }
-        // If not found, keep looking in the other inherited contracts
-    }
-
-    return undefined
 }

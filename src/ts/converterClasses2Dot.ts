@@ -85,6 +85,15 @@ export function addAssociationsToDot(
 
     // for each class
     for (const sourceUmlClass of umlClasses) {
+        // for each enum in the class
+        sourceUmlClass.enums.forEach((enumId) => {
+            dotString += `\n${enumId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
+        })
+        // for each struct in the class
+        sourceUmlClass.structs.forEach((structId) => {
+            dotString += `\n${structId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
+        })
+
         // for each association in that class
         for (const association of Object.values(sourceUmlClass.associations)) {
             // find the target class with the same class name and
@@ -134,6 +143,7 @@ function addAssociationToDot(
     ) {
         return ''
     }
+
     let dotString = `\n${sourceUmlClass.id} -> ${targetUmlClass.id} [`
 
     if (

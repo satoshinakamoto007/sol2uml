@@ -62,12 +62,8 @@ export interface ClassProperties {
     relativePath: string;
     importedFileNames?: string[];
     stereotype?: ClassStereotype;
-    enums?: {
-        [name: string]: string[];
-    };
-    structs?: {
-        [name: string]: Attribute[];
-    };
+    enums?: number[];
+    structs?: number[];
     attributes?: Attribute[];
     operators?: Operator[];
     associations?: {
@@ -84,12 +80,8 @@ export declare class UmlClass implements ClassProperties {
     stereotype?: ClassStereotype;
     attributes: Attribute[];
     operators: Operator[];
-    enums: {
-        [name: string]: string[];
-    };
-    structs: {
-        [name: string]: Attribute[];
-    };
+    enums: number[];
+    structs: number[];
     associations: {
         [name: string]: Association;
     };

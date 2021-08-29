@@ -1,4 +1,9 @@
-import { Attribute, AttributeType, UmlClass } from '../umlClass'
+import {
+    Attribute,
+    AttributeType,
+    ClassStereotype,
+    UmlClass,
+} from '../umlClass'
 import { calcStorageByteSize, isElementary } from '../converterClasses2Slots'
 
 describe('storage parser', () => {
@@ -77,61 +82,118 @@ describe('storage parser', () => {
                 expected
             )
         })
-        describe('contract level structs', () => {
-            const baseStructs: { [structName: string]: Attribute[] } = {
-                ContractLevelStruct0: [
-                    {
-                        name: 'param1',
-                        type: 'uint256',
-                        attributeType: AttributeType.Elementary,
-                    },
-                    {
-                        name: 'param2',
-                        type: 'bool',
-                        attributeType: AttributeType.Elementary,
-                    },
-                ],
-                ContractLevelStruct1: [
-                    {
-                        name: 'param1',
-                        type: 'uint256',
-                        attributeType: AttributeType.Elementary,
-                    },
-                    {
-                        name: 'param2',
-                        type: 'address',
-                        attributeType: AttributeType.Elementary,
-                    },
-                    {
-                        name: 'param3',
-                        type: 'uint8',
-                        attributeType: AttributeType.Elementary,
-                    },
-                    {
-                        name: 'param4',
-                        type: 'bytes1',
-                        attributeType: AttributeType.Elementary,
-                    },
-                ],
-                ContractLevelStruct2: [
-                    {
-                        name: 'param1',
-                        type: 'ContractLevelStruct0',
-                        attributeType: AttributeType.UserDefined,
-                    },
-                    {
-                        name: 'param2',
-                        type: 'ContractLevelStruct1[2]',
-                        attributeType: AttributeType.Array,
-                    },
-                ],
-            }
-            const baseEnums: { [name: string]: string[] } = {
-                enum0: ['start', 'stop'],
-                enum1: ['red', 'orange', 'green'],
-            }
+        describe('structs', () => {
+            const otherClasses: UmlClass[] = [
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Struct,
+                    name: 'ContractLevelStruct0',
+                    attributes: [
+                        {
+                            name: 'param1',
+                            type: 'uint256',
+                            attributeType: AttributeType.Elementary,
+                        },
+                        {
+                            name: 'param2',
+                            type: 'bool',
+                            attributeType: AttributeType.Elementary,
+                        },
+                    ],
+                }),
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Struct,
+                    name: 'ContractLevelStruct1',
+                    attributes: [
+                        {
+                            name: 'param1',
+                            type: 'uint256',
+                            attributeType: AttributeType.Elementary,
+                        },
+                        {
+                            name: 'param2',
+                            type: 'address',
+                            attributeType: AttributeType.Elementary,
+                        },
+                        {
+                            name: 'param3',
+                            type: 'uint8',
+                            attributeType: AttributeType.Elementary,
+                        },
+                        {
+                            name: 'param4',
+                            type: 'bytes1',
+                            attributeType: AttributeType.Elementary,
+                        },
+                    ],
+                }),
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Struct,
+                    name: 'ContractLevelStruct2',
+                    attributes: [
+                        {
+                            name: 'param1',
+                            type: 'ContractLevelStruct0',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                        {
+                            name: 'param2',
+                            type: 'ContractLevelStruct1[2]',
+                            attributeType: AttributeType.Array,
+                        },
+                    ],
+                }),
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Enum,
+                    name: 'enum0',
+                    attributes: [
+                        {
+                            name: 'start',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                        {
+                            name: 'stop',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                    ],
+                }),
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Enum,
+                    name: 'enum1',
+                    attributes: [
+                        {
+                            name: 'red',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                        {
+                            name: 'orange',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                        {
+                            name: 'green',
+                            attributeType: AttributeType.UserDefined,
+                        },
+                    ],
+                }),
+                new UmlClass({
+                    ...defaultClassProperties,
+                    stereotype: ClassStereotype.Interface,
+                    name: 'IERC20',
+                }),
+            ]
             test.each`
                 types                                                     | expected
+                ${['address', 'address', 'address']}                      | ${96}
+                ${['address', 'bytes12', 'bytes12', 'address']}           | ${64}
+                ${['IERC20']}                                             | ${32}
+                ${['IERC20', 'IERC20', 'IERC20']}                         | ${96}
+                ${['IERC20[3]']}                                          | ${96}
+                ${['IERC20', 'bytes12', 'bytes12', 'IERC20']}             | ${64}
+                ${['bytes31', 'bytes2', 'bytes31']}                       | ${96}
                 ${['uint256', 'bytes32']}                                 | ${64}
                 ${['bool', 'uint8']}                                      | ${32}
                 ${['bool[12]', 'uint8[12]']}                              | ${64}
@@ -151,16 +213,15 @@ describe('storage parser', () => {
                 ${['ContractLevelStruct1[2]', 'ContractLevelStruct0[3]']} | ${320}
                 ${['ContractLevelStruct2[]', 'address']}                  | ${64}
                 ${['address', 'ContractLevelStruct2[]']}                  | ${64}
+                ${['bool', 'ContractLevelStruct0', 'bool']}               | ${128}
                 ${['enum0']}                                              | ${32}
                 ${['enum0', 'enum1']}                                     | ${32}
                 ${['enum0', 'enum1', 'bytes30']}                          | ${32}
                 ${['enum0', 'enum1', 'bytes31']}                          | ${64}
                 ${['enum0', 'enum1', 'bytes30[2]']}                       | ${96}
+                ${['bool', 'enum0', 'bool']}                              | ${32}
             `('struct with types $types', ({ types, expected }) => {
-                const structs: { [name: string]: Attribute[] } = {
-                    ...baseStructs,
-                    ContractLevelStruct: [],
-                }
+                const testAttributes: Attribute[] = []
                 types.forEach((type: string, i: number) => {
                     const attributeType =
                         type.slice(-1) === ']'
@@ -168,25 +229,32 @@ describe('storage parser', () => {
                             : isElementary(type)
                             ? AttributeType.Elementary
                             : AttributeType.UserDefined
-                    structs.ContractLevelStruct.push({
-                        name: 'param' + i,
+                    testAttributes.push({
+                        name: `test ${i}`,
                         type,
                         attributeType,
                     })
                 })
+                const testStruct = new UmlClass({
+                    ...defaultClassProperties,
+                    name: 'ContractLevelStruct',
+                    stereotype: ClassStereotype.Struct,
+                    attributes: testAttributes,
+                })
                 const umlCLass = new UmlClass({
                     ...defaultClassProperties,
-                    structs,
-                    enums: baseEnums,
                 })
                 const attribute: Attribute = {
                     attributeType: AttributeType.UserDefined,
                     type: 'ContractLevelStruct',
                     name: 'structName',
                 }
-                expect(calcStorageByteSize(attribute, umlCLass, [])).toEqual(
-                    expected
-                )
+                expect(
+                    calcStorageByteSize(attribute, umlCLass, [
+                        ...otherClasses,
+                        testStruct,
+                    ])
+                ).toEqual(expected)
             })
         })
     })

@@ -15,7 +15,6 @@ import {
 import * as path from 'path'
 
 import {
-    Attribute,
     AttributeType,
     ClassStereotype,
     OperatorStereotype,
@@ -36,13 +35,15 @@ import {
 
 const debug = require('debug')('sol2uml')
 
+let umlClasses: UmlClass[] = []
+
 export function convertAST2UmlClasses(
     node: ASTNode,
     relativePath: string,
     filesystem: boolean = false
 ): UmlClass[] {
-    let umlClasses: UmlClass[] = []
     const importedPaths: string[] = []
+    umlClasses = []
 
     if (node.type === 'SourceUnit') {
         node.children.forEach((childNode) => {
@@ -278,29 +279,29 @@ function parseContractDefinition(
             // Recursively parse event parameters for associations
             umlClass = addAssociations(subNode.parameters, umlClass)
         } else if (isStructDefinition(subNode)) {
-            let structMembers: Attribute[] = []
-
-            subNode.members.forEach((member) => {
-                const [type, attributeType] = parseTypeName(member.typeName)
-                structMembers.push({
-                    name: member.name,
-                    type,
-                    attributeType,
-                })
+            const structClass = new UmlClass({
+                name: subNode.name,
+                absolutePath: umlClass.absolutePath,
+                relativePath: umlClass.relativePath,
+                stereotype: ClassStereotype.Struct,
             })
+            parseStructDefinition(structClass, subNode)
+            umlClasses.push(structClass)
 
-            umlClass.structs[subNode.name] = structMembers
-
-            // Recursively parse members for associations
-            umlClass = addAssociations(subNode.members, umlClass)
+            // list as contract level struct
+            umlClass.structs.push(structClass.id)
         } else if (isEnumDefinition(subNode)) {
-            let enumValues: string[] = []
-
-            subNode.members.forEach((member) => {
-                enumValues.push(member.name)
+            const enumClass = new UmlClass({
+                name: subNode.name,
+                absolutePath: umlClass.absolutePath,
+                relativePath: umlClass.relativePath,
+                stereotype: ClassStereotype.Enum,
             })
+            parseEnumDefinition(enumClass, subNode)
+            umlClasses.push(enumClass)
 
-            umlClass.enums[subNode.name] = enumValues
+            // list as contract level enum
+            umlClass.enums.push(enumClass.id)
         }
     })
 
@@ -308,7 +309,10 @@ function parseContractDefinition(
 }
 
 // Recursively parse AST nodes for associations
-function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
+function addAssociations(
+    nodes: (ASTNode & { isStateVar?: boolean })[],
+    umlClass: UmlClass
+): UmlClass {
     if (!nodes || !Array.isArray(nodes)) {
         debug(
             'Warning - can not recursively parse AST nodes for associations. Invalid nodes array'
@@ -322,6 +326,11 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
             break
         }
 
+        // If state variable then mark as a Storage reference, else Memory
+        const referenceType = node.isStateVar!
+            ? ReferenceType.Storage
+            : ReferenceType.Memory
+
         // Recursively parse sub nodes that can has variable declarations
         switch (node.type) {
             case 'VariableDeclaration':
@@ -329,11 +338,6 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                     break
                 }
                 if (node.typeName.type === 'UserDefinedTypeName') {
-                    // If state variable then mark as a Storage reference, else Memory
-                    const referenceType = node.isStateVar
-                        ? ReferenceType.Storage
-                        : ReferenceType.Memory
-
                     // Library references can have a Library dot variable notation. eg Set.Data
                     const targetUmlClassName = parseClassName(
                         node.typeName.namePath
@@ -349,14 +353,19 @@ function addAssociations(nodes: ASTNode[], umlClass: UmlClass): UmlClass {
                         umlClass
                     )
                     umlClass = addAssociations(
-                        [node.typeName.valueType],
+                        [
+                            {
+                                ...node.typeName.valueType,
+                                isStateVar: node.isStateVar,
+                            },
+                        ],
                         umlClass
                     )
                 }
                 break
             case 'UserDefinedTypeName':
                 umlClass.addAssociation({
-                    referenceType: ReferenceType.Memory,
+                    referenceType: referenceType,
                     targetUmlClassName: node.namePath,
                 })
                 break

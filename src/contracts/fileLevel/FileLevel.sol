@@ -25,9 +25,39 @@ struct FileLevelYetAnotherStruct {
     uint256[] balances;
 }
 
-contract TestContract {
+contract Parent {
+    struct ParentLevelStruct {
+        uint256 count;
+        uint256 total;
+    }
+
+    struct ParentLevelUsedStruct {
+        uint256 count;
+        uint256 total;
+    }
+
+    enum ParentLevelEnum {
+        movie,
+        music,
+        show
+    }
+
+    enum ParentLevelUsedEnum {
+        movie,
+        music,
+        show
+    }
+}
+
+contract TestContract is Parent {
 
     enum ContractLevelEnum {
+        movie,
+        music,
+        show
+    }
+
+    enum ContractLevelUsedEnum {
         movie,
         music,
         show
@@ -38,8 +68,17 @@ contract TestContract {
         uint256 total;
     }
 
+    struct ContractLevelUsedStruct {
+        uint256 count;
+        uint256 total;
+    }
+
     FileLevelEnum status;
     FileLevelStruct public fls;
+    ContractLevelUsedStruct clus;
+    ParentLevelUsedStruct plus;
+    ContractLevelUsedEnum clue;
+    ParentLevelUsedEnum plue;
 }
 
 enum FileLevelEnum {

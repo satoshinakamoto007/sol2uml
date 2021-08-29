@@ -73,8 +73,8 @@ export interface ClassProperties {
     relativePath: string
     importedFileNames?: string[]
     stereotype?: ClassStereotype
-    enums?: { [name: string]: string[] }
-    structs?: { [name: string]: Attribute[] }
+    enums?: number[]
+    structs?: number[]
     attributes?: Attribute[]
     operators?: Operator[]
     associations?: { [name: string]: Association }
@@ -93,8 +93,8 @@ export class UmlClass implements ClassProperties {
     attributes: Attribute[] = []
     operators: Operator[] = []
 
-    enums: { [name: string]: string[] } = {}
-    structs: { [name: string]: Attribute[] } = {}
+    enums: number[] = []
+    structs: number[] = []
     associations: { [name: string]: Association } = {}
 
     constructor(properties: ClassProperties) {
