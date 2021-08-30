@@ -175,10 +175,46 @@ export const parseStructSlots = (
         }
         return undefined
     }
-    if (attribute.attributeType === AttributeType.Mapping) {
+    if (
+        attribute.attributeType === AttributeType.Mapping ||
+        attribute.attributeType === AttributeType.Array
+    ) {
+        // get the UserDefined type from the mapping or array
+        // note the mapping could be an array of Structs
+        // Could also be a mapping of a mapping
+        const result =
+            attribute.attributeType === AttributeType.Mapping
+                ? attribute.type.match(/=\\>((?!mapping)\w*)[\\[]/)
+                : attribute.type.match(/(\w+)\[/)
+        if (result !== null && result[1] && !isElementary(result[1])) {
+            // Find UserDefined type
+            const typeClass = otherClasses.find(
+                ({ name }) => name === result[1]
+            )
+            if (!typeClass) {
+                throw Error(
+                    `Failed to find user defined type "${result[1]}" in attribute type "${attribute.type}"`
+                )
+            }
+            if (typeClass.stereotype === ClassStereotype.Struct) {
+                const storages = parseStorage(
+                    typeClass,
+                    otherClasses,
+                    [],
+                    structSlots
+                )
+                const newStructSlots = {
+                    id: slotId++,
+                    name: typeClass.name,
+                    type: StorageType.Struct,
+                    storages,
+                }
+                structSlots.push(newStructSlots)
+
+                return newStructSlots
+            }
+        }
         return undefined
-    }
-    if (attribute.attributeType === AttributeType.Array) {
     }
     return undefined
 }

@@ -151,6 +151,8 @@ contract TestStorage is Parent, Parent2 {
     string nameSlot;
     mapping (address => bool) blacklist;
     mapping (address => uint256) balance;
+    mapping (address => ContractLevelStruct2) mapStruct;
+    mapping (address => mapping (address => ContractLevelStruct2)) mapOfMapStruct;
 
     constructor(address _superUser) {
         superUser = _superUser;
