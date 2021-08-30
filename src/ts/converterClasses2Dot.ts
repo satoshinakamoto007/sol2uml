@@ -85,14 +85,20 @@ export function addAssociationsToDot(
 
     // for each class
     for (const sourceUmlClass of umlClasses) {
-        // for each enum in the class
-        sourceUmlClass.enums.forEach((enumId) => {
-            dotString += `\n${enumId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
-        })
-        // for each struct in the class
-        sourceUmlClass.structs.forEach((structId) => {
-            dotString += `\n${structId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
-        })
+        if (!classOptions.hideEnums) {
+            // for each enum in the class
+            sourceUmlClass.enums.forEach((enumId) => {
+                // Draw aggregated link from contract to contract level Enum
+                dotString += `\n${enumId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
+            })
+        }
+        if (!classOptions.hideStructs) {
+            // for each struct in the class
+            sourceUmlClass.structs.forEach((structId) => {
+                // Draw aggregated link from contract to contract level Struct
+                dotString += `\n${structId} -> ${sourceUmlClass.id} [arrowhead=diamond, weight=2]`
+            })
+        }
 
         // for each association in that class
         for (const association of Object.values(sourceUmlClass.associations)) {
@@ -130,12 +136,14 @@ function addAssociationToDot(
     classOptions: ClassOptions = {}
 ): string {
     // do not include library or interface associations if hidden
+    // Or associations to Structs or Enums if they are hidden
     if (
         (classOptions.hideLibraries &&
             (sourceUmlClass.stereotype === ClassStereotype.Library ||
                 targetUmlClass.stereotype === ClassStereotype.Library)) ||
         (classOptions.hideInterfaces &&
-            targetUmlClass.stereotype === ClassStereotype.Interface) ||
+            (targetUmlClass.stereotype === ClassStereotype.Interface ||
+                sourceUmlClass.stereotype === ClassStereotype.Interface)) ||
         (classOptions.hideStructs &&
             targetUmlClass.stereotype === ClassStereotype.Struct) ||
         (classOptions.hideEnums &&
