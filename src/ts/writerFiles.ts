@@ -62,7 +62,8 @@ export function convertDot2Svg(dot: string): any {
 }
 
 export function writeSolidity(code: string, filename = 'solidity') {
-    const outputFile = filename + '.sol'
+    const extension = path.extname(filename)
+    const outputFile = extension === '.sol' ? filename : filename + '.sol'
     debug(`About to write Solidity to file ${outputFile}`)
 
     writeFile(outputFile, code, (err) => {
@@ -77,14 +78,16 @@ export function writeSolidity(code: string, filename = 'solidity') {
     })
 }
 
-export function writeDot(dot: string, dotFilename = 'classDiagram.dot') {
-    debug(`About to write Dot file to ${dotFilename}`)
+export function writeDot(dot: string, filename = 'classDiagram.dot') {
+    const extension = path.extname(filename)
+    const outputFile = extension === '.dot' ? filename : filename + '.dot'
+    debug(`About to write Dot file to ${outputFile}`)
 
-    writeFile(dotFilename, dot, (err) => {
+    writeFile(outputFile, dot, (err) => {
         if (err) {
-            throw new VError(err, `Failed to write Dot file to ${dotFilename}`)
+            throw new VError(err, `Failed to write Dot file to ${outputFile}`)
         } else {
-            console.log(`Dot file written to ${dotFilename}`)
+            console.log(`Dot file written to ${outputFile}`)
         }
     })
 }

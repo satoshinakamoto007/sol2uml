@@ -211,16 +211,22 @@ program
     .action(async (contractAddress, options, command) => {
         debug(`About to flatten ${contractAddress}`)
 
+        const combinedOptions = {
+            ...command.parent._optionValues,
+            ...options,
+        }
+
         const etherscanParser = new EtherscanParser(
-            command.parent._optionValues.apiKey,
-            options.network
+            combinedOptions.apiKey,
+            combinedOptions.network
         )
 
         const { solidityCode, contractName } =
             await etherscanParser.getSolidityCode(contractAddress)
 
         // Write Solidity to the contract address
-        await writeSolidity(solidityCode, contractName)
+        const outputFilename = combinedOptions.outputFileName || contractName
+        await writeSolidity(solidityCode, outputFilename)
     })
 
 program.on('option:verbose', () => {
