@@ -3,7 +3,8 @@ import { UmlClass } from './umlClass'
 
 export const classesConnectedToBaseContracts = (
     umlClasses: UmlClass[],
-    baseContractNames: string[]
+    baseContractNames: string[],
+    depth?: number
 ): UmlClass[] => {
     let filteredUmlClasses: { [contractName: string]: UmlClass } = {}
 
@@ -15,7 +16,8 @@ export const classesConnectedToBaseContracts = (
             ...classesConnectedToBaseContract(
                 umlClasses,
                 baseContractName,
-                graph
+                graph,
+                depth
             ),
         }
     }
@@ -26,7 +28,8 @@ export const classesConnectedToBaseContracts = (
 export const classesConnectedToBaseContract = (
     umlClasses: UmlClass[],
     baseContractName: string,
-    graph: WeightedDiGraph
+    graph: WeightedDiGraph,
+    depth: number = 1000
 ): { [contractName: string]: UmlClass } => {
     // Find the base UML Class from the base contract name
     const baseUmlClass = umlClasses.find(({ name }) => {
@@ -44,7 +47,7 @@ export const classesConnectedToBaseContract = (
     // Get all the UML Classes that are connected to the base contract
     const filteredUmlClasses: { [contractName: string]: UmlClass } = {}
     for (const umlClass of umlClasses) {
-        if (dfs.hasPathTo(umlClass.id)) {
+        if (dfs.distanceTo(umlClass.id) <= depth) {
             filteredUmlClasses[umlClass.name] = umlClass
         }
     }

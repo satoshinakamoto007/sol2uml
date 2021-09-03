@@ -144,6 +144,9 @@ function addAssociationToDot(
         (classOptions.hideInterfaces &&
             (targetUmlClass.stereotype === ClassStereotype.Interface ||
                 sourceUmlClass.stereotype === ClassStereotype.Interface)) ||
+        (classOptions.hideAbstracts &&
+            (targetUmlClass.stereotype === ClassStereotype.Abstract ||
+                sourceUmlClass.stereotype === ClassStereotype.Abstract)) ||
         (classOptions.hideStructs &&
             targetUmlClass.stereotype === ClassStereotype.Struct) ||
         (classOptions.hideEnums &&

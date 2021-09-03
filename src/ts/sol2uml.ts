@@ -29,8 +29,8 @@ sol2uml class --help
     )
     .addOption(
         new Option(
-            '-d, --depthLimit <depth>',
-            'number of sub folders that will be recursively searched for Solidity files.'
+            '-sf, --subfolders <value>',
+            'number of subfolders that will be recursively searched for Solidity files.'
         ).default('-1', 'all')
     )
     .addOption(
@@ -84,19 +84,25 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
         '-b, --baseContractNames <value>',
         'only output contracts connected to these comma separated base contract names'
     )
+    .addOption(
+        new Option(
+            '-d, --depth <value>',
+            'depth of connected classes to the base contracts. 1 will only show directly connected contracts, interfaces, libraries, structs and enums.'
+        ).default('-1', 'all')
+    )
     .option(
         '-c, --clusterFolders',
         'cluster contracts into source folders',
         false
     )
     .option(
-        '-ha, --hideAttributes',
-        'hide class and interface attributes/variables',
+        '-hv, --hideVariables',
+        'hide variables from contracts, interfaces, structs and enums',
         false
     )
     .option(
-        '-ho, --hideOperators',
-        'hide class and interface operators/functions',
+        '-hf, --hideFunctions',
+        'hide functions from contracts, interfaces and libraries',
         false
     )
     .option(
@@ -108,6 +114,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
     .option('-hs, --hideStructs', 'hide data structures', false)
     .option('-hl, --hideLibraries', 'hide libraries', false)
     .option('-hi, --hideInterfaces', 'hide interfaces', false)
+    .option('-ha, --hideAbstracts', 'hide abstract contracts', false)
     .option('-hf, --hideFilename', 'hide relative path and file name', false)
     .action(async (fileFolderAddress, options, command) => {
         try {
@@ -126,7 +133,8 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
                 const baseContractNames = options.baseContractNames.split(',')
                 filteredUmlClasses = classesConnectedToBaseContracts(
                     umlClasses,
-                    baseContractNames
+                    baseContractNames,
+                    options.depth
                 )
             }
 

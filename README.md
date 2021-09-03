@@ -51,16 +51,18 @@ Options:
   -b, --baseContractNames <value>              only output contracts connected to these comma separated base contract names
   -f, --outputFormat <value>                   output file format: svg, png, sol, dot or all (default: "svg")
   -o, --outputFileName <value>                 output file name
-  -d, --depthLimit <depth>                     number of sub folders that will be recursively searched for Solidity files. Default -1 is unlimited (default: -1)
+  -sf, --subfolders <subfolders>               number of subfolders that will be recursively searched for Solidity files. (default: all)
   -i, --ignoreFilesOrFolders <filesOrFolders>  comma separated list of files or folders to ignore
   -n, --network <network>                      mainnet, polygon, bsc, ropsten, kovan, rinkeby or goerli (default: "mainnet")
-  -ha, --hideAttributes                        hide class and interface attributes/variables (default: false)
-  -ho, --hideOperators                         hide class and interface operators/functions (default: false)
+  -d, --depth <value>                          depth of connected classes to the base contracts. 1 will only show directly connected contracts, interfaces, libraries, structs and enums. (default: all)
+  -hv, --hideVariables                         hide variables from contracts, interfaces, structs and enums (default: false)
+  -hf, --hideFunctions                         hide functions from contracts, interfaces and libraries (default: false)
   -hp, --hidePrivates                          hide private and internal attributes and operators (default: false)
   -he, --hideEnums                             hide enum types (default: false)
   -hs, --hideStructs                           hide data structures (default: false)
   -hl, --hideLibraries                         hide libraries (default: false)
   -hi, --hideInterfaces                        hide interfaces (default: false)
+  -ha, --hideAbstracts                         hide abstract contracts (default: false)
   -hf, --hideFilename                          hide relative path and file name (default: false)
   -k, --etherscanApiKey <key>                  Etherscan API Key
   -c, --clusterFolders                         cluster contracts into source folders

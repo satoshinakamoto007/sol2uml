@@ -26,10 +26,10 @@ export const parserUmlClasses = async (
 
         result = await etherscanParser.getUmlClasses(fileFolderAddress)
     } else {
-        const depthLimit = parseInt(options.depthLimit)
-        if (isNaN(depthLimit)) {
+        const subfolders = parseInt(options.subfolders)
+        if (isNaN(subfolders)) {
             console.error(
-                `depthLimit option must be an integer. Not ${options.depthLimit}`
+                `subfolders option must be an integer. Not ${options.subfolders}`
             )
             process.exit(1)
         }
@@ -41,7 +41,7 @@ export const parserUmlClasses = async (
         result.umlClasses = await parseUmlClassesFromFiles(
             filesFolders,
             ignoreFilesFolders,
-            depthLimit
+            subfolders
         )
     }
     return result

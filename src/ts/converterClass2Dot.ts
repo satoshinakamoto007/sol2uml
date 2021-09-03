@@ -11,13 +11,14 @@ import {
 import { isAddress } from './utils/regEx'
 
 export interface ClassOptions {
-    hideAttributes?: boolean
-    hideOperators?: boolean
+    hideVariables?: boolean
+    hideFunctions?: boolean
     hideStructs?: boolean
     hideEnums?: boolean
     hideLibraries?: boolean
     hideInterfaces?: boolean
-    hideInternals?: boolean
+    hidePrivates?: boolean
+    hideAbstracts?: boolean
     hideFilename?: boolean
 }
 
@@ -25,12 +26,14 @@ export const convertClass2Dot = (
     umlClass: UmlClass,
     options: ClassOptions = {}
 ): string => {
-    // do not include library, interface, struct or enum classes if hidden
+    // do not include library, interface, abstracts, struct or enum classes if hidden
     if (
         (options.hideLibraries &&
             umlClass.stereotype === ClassStereotype.Library) ||
         (options.hideInterfaces &&
             umlClass.stereotype === ClassStereotype.Interface) ||
+        (options.hideAbstracts &&
+            umlClass.stereotype === ClassStereotype.Abstract) ||
         (options.hideStructs &&
             umlClass.stereotype === ClassStereotype.Struct) ||
         (options.hideEnums && umlClass.stereotype === ClassStereotype.Enum)
@@ -44,12 +47,12 @@ export const convertClass2Dot = (
     )}`
 
     // Add attributes
-    if (!options.hideAttributes) {
+    if (!options.hideVariables) {
         dotString += dotAttributeVisibilities(umlClass, options)
     }
 
     // Add operators
-    if (!options.hideOperators) {
+    if (!options.hideFunctions) {
         dotString += dotOperatorVisibilities(umlClass, options)
     }
 
@@ -93,7 +96,7 @@ const dotClassTitle = (
 
 const dotAttributeVisibilities = (
     umlClass: UmlClass,
-    options: { hideInternals?: boolean } = {}
+    options: { hidePrivates?: boolean } = {}
 ): string => {
     let dotString = '| '
     // if a struct or enum then no visibility group
@@ -111,13 +114,13 @@ const dotAttributeVisibilities = (
         // For each attribute of te UML Class
         for (const attribute of umlClass.attributes) {
             if (
-                !options.hideInternals &&
+                !options.hidePrivates &&
                 vizGroup === 'Private' &&
                 attribute.visibility === Visibility.Private
             ) {
                 attributes.push(attribute)
             } else if (
-                !options.hideInternals &&
+                !options.hidePrivates &&
                 vizGroup === 'Internal' &&
                 attribute.visibility === Visibility.Internal
             ) {
@@ -167,7 +170,7 @@ const dotAttributes = (
 
 const dotOperatorVisibilities = (
     umlClass: UmlClass,
-    options: { hideInternals?: boolean } = {}
+    options: { hidePrivates?: boolean } = {}
 ): string => {
     let dotString = '| '
 
@@ -178,13 +181,13 @@ const dotOperatorVisibilities = (
         // For each attribute of te UML Class
         for (const operator of umlClass.operators) {
             if (
-                !options.hideInternals &&
+                !options.hidePrivates &&
                 vizGroup === 'Private' &&
                 operator.visibility === Visibility.Private
             ) {
                 operators.push(operator)
             } else if (
-                !options.hideInternals &&
+                !options.hidePrivates &&
                 vizGroup === 'Internal' &&
                 operator.visibility === Visibility.Internal
             ) {
