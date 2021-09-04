@@ -1,6 +1,5 @@
 pragma solidity ^0.8.6;
 
-
 struct FileLevelNotConnectedStruct {
     bool init;
     string name;
@@ -23,6 +22,23 @@ struct FileLevelAnotherStruct {
 struct FileLevelYetAnotherStruct {
     bool active;
     uint256[] balances;
+}
+
+library LibraryStructs {
+    struct LibraryLevel {
+        address owner;
+        FileLevelStruct fls;
+    }
+
+    struct LibraryLevel2 {
+        LibraryLevel ll;
+    }
+
+    enum LibraryLevelEnum {
+        start,
+        pause,
+        stop
+    }
 }
 
 contract Parent {
@@ -80,6 +96,10 @@ contract TestContract is Parent {
     ParentLevelUsedStruct plus;
     ContractLevelUsedEnum clue;
     ParentLevelUsedEnum plue;
+    LibraryStructs.LibraryLevel ll;
+    LibraryStructs.LibraryLevel2 ll2;
+
+    LibraryLevelEnum lle;
 }
 
 enum FileLevelEnum {

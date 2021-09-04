@@ -339,14 +339,19 @@ function addAssociations(
                 }
                 if (node.typeName.type === 'UserDefinedTypeName') {
                     // Library references can have a Library dot variable notation. eg Set.Data
-                    const targetUmlClassName = parseClassName(
+                    const { umlClassName, structOrEnum } = parseClassName(
                         node.typeName.namePath
                     )
-
                     umlClass.addAssociation({
                         referenceType,
-                        targetUmlClassName,
+                        targetUmlClassName: umlClassName,
                     })
+                    if (structOrEnum) {
+                        umlClass.addAssociation({
+                            referenceType,
+                            targetUmlClassName: structOrEnum,
+                        })
+                    }
                 } else if (node.typeName.type === 'Mapping') {
                     umlClass = addAssociations(
                         [node.typeName.keyType],
@@ -498,20 +503,27 @@ function parseExpression(expression: Expression, umlClass: UmlClass): UmlClass {
     return umlClass
 }
 
-function parseClassName(rawClassName: string): string {
+function parseClassName(rawClassName: string): {
+    umlClassName: string
+    structOrEnum: string
+} {
     if (
         !rawClassName ||
         typeof rawClassName !== 'string' ||
         rawClassName.length === 0
     ) {
-        return ''
+        return {
+            umlClassName: '',
+            structOrEnum: rawClassName,
+        }
     }
 
     // Split the name on dot
     const splitUmlClassName = rawClassName.split('.')
-    const umlClassName = splitUmlClassName[0]
-
-    return umlClassName
+    return {
+        umlClassName: splitUmlClassName[0],
+        structOrEnum: splitUmlClassName[1],
+    }
 }
 
 function parseVisibility(visibility: string): Visibility {
