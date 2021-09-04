@@ -6,6 +6,7 @@ export enum StorageType {
 }
 
 export interface Storage {
+    id: number
     fromSlot: number
     toSlot: number
     byteSize: number
@@ -26,7 +27,8 @@ export interface Slots {
     storages: Storage[]
 }
 
-let slotId = 0
+let slotId = 1
+let storageId = 1
 
 export const convertClasses2Slots = (
     contractName: string,
@@ -109,6 +111,7 @@ const parseStorage = (
         if (nextOffset + byteSize > 32) {
             const nextFromSlot = storages.length > 0 ? lastToSlot + 1 : 0
             storages.push({
+                id: storageId++,
                 fromSlot: nextFromSlot,
                 toSlot: nextFromSlot + Math.floor((byteSize - 1) / 33),
                 byteSize,
@@ -120,6 +123,7 @@ const parseStorage = (
             })
         } else {
             storages.push({
+                id: storageId++,
                 fromSlot: lastToSlot,
                 toSlot: lastToSlot,
                 byteSize,

@@ -4,6 +4,7 @@ export declare enum StorageType {
     Struct = 1
 }
 export interface Storage {
+    id: number;
     fromSlot: number;
     toSlot: number;
     byteSize: number;

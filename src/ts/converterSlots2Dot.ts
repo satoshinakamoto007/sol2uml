@@ -20,10 +20,23 @@ node [shape=record, style=filled, fillcolor=gray95]`
     // process the structs
     structSlots.forEach((struct) => {
         dotString = convertSlots2Dot(struct, dotString)
-        dotString += `\n ${slots.id}:${struct.id} -> ${struct.id}`
     })
 
     // link the contract to structs
+    slots.storages.forEach((storage) => {
+        if (storage.structSlotsId) {
+            dotString += `\n ${slots.id}:${storage.id} -> ${storage.structSlotsId}`
+        }
+    })
+
+    // link structs to structs
+    structSlots.forEach((struct) => {
+        struct.storages.forEach((storage) => {
+            if (storage.structSlotsId) {
+                dotString += `\n ${struct.id}:${storage.id} -> ${storage.structSlotsId}`
+            }
+        })
+    })
 
     // Need to close off the last digraph
     dotString += '\n}'
@@ -102,8 +115,7 @@ export function convertSlots2Dot(
 }
 
 const dotVariable = (storage: Storage, contractName: string): string => {
-    const port =
-        storage.structSlotsId !== undefined ? `<${storage.structSlotsId}>` : ''
+    const port = storage.structSlotsId !== undefined ? `<${storage.id}>` : ''
     const contractNamePrefix =
         storage.contractName !== contractName ? `${storage.contractName}.` : ''
 

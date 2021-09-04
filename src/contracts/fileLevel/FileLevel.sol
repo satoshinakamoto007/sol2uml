@@ -75,6 +75,7 @@ contract TestContract is Parent {
 
     FileLevelEnum status;
     FileLevelStruct public fls;
+    FileLevelStruct public fls2;
     ContractLevelUsedStruct clus;
     ParentLevelUsedStruct plus;
     ContractLevelUsedEnum clue;
