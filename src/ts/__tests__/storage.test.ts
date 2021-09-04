@@ -4,7 +4,7 @@ import {
     ClassStereotype,
     UmlClass,
 } from '../umlClass'
-import { calcStorageByteSize, isElementary } from '../converterClasses2Slots'
+import { calcStorageByteSize, isElementary } from '../converterClasses2Storage'
 
 describe('storage parser', () => {
     describe('calc storage bytes size of', () => {

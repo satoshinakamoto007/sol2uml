@@ -15,11 +15,11 @@ export interface Storage {
     variable: string
     contractName?: string
     value?: string
-    structSlotsId?: number
+    structObjectId?: number
     enumId?: number
 }
 
-export interface Slots {
+export interface StorageObject {
     id: number
     name: string
     address?: string
@@ -27,48 +27,46 @@ export interface Slots {
     storages: Storage[]
 }
 
-let slotId = 1
+let storageObjectId = 1
 let storageId = 1
 
-export const convertClasses2Slots = (
+export const convertClasses2StorageObjects = (
     contractName: string,
-    umlClasses: UmlClass[],
-    structSlots: Slots[] = []
-): Slots => {
+    umlClasses: UmlClass[]
+): StorageObject[] => {
     // Find the base UML Class from the base contract name
     const umlClass = umlClasses.find(({ name }) => {
         return name === contractName
     })
-
     if (!umlClass) {
         throw Error(`Failed to find contract with name "${contractName}"`)
     }
 
-    const storages = parseStorage(umlClass, umlClasses, [], structSlots)
+    const storageObjects: StorageObject[] = []
+    const storages = parseStorage(umlClass, umlClasses, [], storageObjects)
 
-    return {
-        id: slotId++,
+    storageObjects.unshift({
+        id: storageObjectId++,
         name: contractName,
-        type:
-            umlClass.stereotype === ClassStereotype.Struct
-                ? StorageType.Struct
-                : StorageType.Contract,
+        type: StorageType.Contract,
         storages,
-    }
+    })
+
+    return storageObjects
 }
 
 /**
- * Recursively parses the storage slots for a given contract.
+ * Recursively parses the storage for a given contract.
  * @param umlClass contract or file level struct
  * @param umlClasses other contracts, structs and enums that may be a type of a storage variable.
  * @param storages mutable array of storage slots that is appended to
- * @param structSlots mutable array of struct slots that is appended to
+ * @param storageObjects mutable array of StorageObjects that is appended with structs
  */
 const parseStorage = (
     umlClass: UmlClass,
     umlClasses: UmlClass[],
     storages: Storage[],
-    structSlots: Slots[]
+    storageObjects: StorageObject[]
 ) => {
     // Add storage slots from inherited contracts first.
     // Get immediate parent contracts that the class inherits from
@@ -82,7 +80,7 @@ const parseStorage = (
                 `Failed to find parent contract ${parent.targetUmlClassName} of ${umlClass.name}`
             )
         // recursively parse inherited contract
-        parseStorage(parentClass, umlClasses, storages, structSlots)
+        parseStorage(parentClass, umlClasses, storages, storageObjects)
     })
 
     // parse storage for each attribute
@@ -93,12 +91,12 @@ const parseStorage = (
         const byteSize = calcStorageByteSize(attribute, umlClass, umlClasses)
 
         // find any dependent structs
-        const linkedStructSlots = parseStructSlots(
+        const linkedStruct = parseStructStorageObject(
             attribute,
             umlClasses,
-            structSlots
+            storageObjects
         )
-        const structSlotsId = linkedStructSlots?.id
+        const structObjectId = linkedStruct?.id
 
         // Get the toSlot of the last storage item
         let lastToSlot = 0
@@ -119,7 +117,7 @@ const parseStorage = (
                 type: attribute.type,
                 variable: attribute.name,
                 contractName: umlClass.name,
-                structSlotsId,
+                structObjectId,
             })
         } else {
             storages.push({
@@ -131,7 +129,7 @@ const parseStorage = (
                 type: attribute.type,
                 variable: attribute.name,
                 contractName: umlClass.name,
-                structSlotsId,
+                structObjectId,
             })
         }
     })
@@ -139,18 +137,18 @@ const parseStorage = (
     return storages
 }
 
-export const parseStructSlots = (
+export const parseStructStorageObject = (
     attribute: Attribute,
     otherClasses: UmlClass[],
-    structSlots: Slots[]
-): Slots | undefined => {
+    storageObjects: StorageObject[]
+): StorageObject | undefined => {
     if (attribute.attributeType === AttributeType.UserDefined) {
-        // Have we already created the structSlots?
-        const existingStructSlot = structSlots.find(
+        // Have we already created the storageObject?
+        const existingStorageObject = storageObjects.find(
             (dep) => dep.name === attribute.type
         )
-        if (existingStructSlot) {
-            return existingStructSlot
+        if (existingStorageObject) {
+            return existingStorageObject
         }
         // Is the user defined type linked to another Contract, Struct or Enum?
         const dependentClass = otherClasses.find(({ name }) => {
@@ -165,17 +163,17 @@ export const parseStructSlots = (
                 dependentClass,
                 otherClasses,
                 [],
-                structSlots
+                storageObjects
             )
-            const newStructSlots = {
-                id: slotId++,
+            const newStorageObject = {
+                id: storageObjectId++,
                 name: attribute.type,
                 type: StorageType.Struct,
                 storages,
             }
-            structSlots.push(newStructSlots)
+            storageObjects.push(newStorageObject)
 
-            return newStructSlots
+            return newStorageObject
         }
         return undefined
     }
@@ -205,17 +203,17 @@ export const parseStructSlots = (
                     typeClass,
                     otherClasses,
                     [],
-                    structSlots
+                    storageObjects
                 )
-                const newStructSlots = {
-                    id: slotId++,
+                const newStorageObject = {
+                    id: storageObjectId++,
                     name: typeClass.name,
                     type: StorageType.Struct,
                     storages,
                 }
-                structSlots.push(newStructSlots)
+                storageObjects.push(newStorageObject)
 
-                return newStructSlots
+                return newStorageObject
             }
         }
         return undefined

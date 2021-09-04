@@ -5,8 +5,8 @@ import { parserUmlClasses } from './parserGeneral'
 import { EtherscanParser } from './parserEtherscan'
 import { classesConnectedToBaseContracts } from './filterClasses'
 import { Command, Option } from 'commander'
-import { convertClasses2Slots, Slots } from './converterClasses2Slots'
-import { convertAllSlots2Dot } from './converterSlots2Dot'
+import { convertClasses2StorageObjects } from './converterClasses2Storage'
+import { convertStorage2Dot } from './converterStorage2Dot'
 import { isAddress } from './utils/regEx'
 import { writeOutputFiles, writeSolidity } from './writerFiles'
 const program = new Command()
@@ -186,18 +186,17 @@ program
                 [combinedOptions.contractName || contractName]
             )
 
-            const structSlots: Slots[] = []
-            const slots = convertClasses2Slots(
+            const storageObjects = convertClasses2StorageObjects(
                 combinedOptions.contractName || contractName,
-                filteredUmlClasses,
-                structSlots
+                filteredUmlClasses
             )
             if (isAddress(fileFolderAddress)) {
-                slots.address = fileFolderAddress
+                // The first object is the contract
+                storageObjects[0].address = fileFolderAddress
             }
-            debug(slots)
+            debug(storageObjects)
 
-            const dotString = convertAllSlots2Dot(slots, structSlots)
+            const dotString = convertStorage2Dot(storageObjects)
 
             await writeOutputFiles(
                 dotString,
