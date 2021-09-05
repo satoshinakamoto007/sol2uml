@@ -98,6 +98,8 @@ const dotAttributeVisibilities = (
     umlClass: UmlClass,
     options: { hidePrivates?: boolean } = {}
 ): string => {
+    if (umlClass.attributes.length === 0) return ''
+
     let dotString = '| '
     // if a struct or enum then no visibility group
     if (
@@ -172,6 +174,8 @@ const dotOperatorVisibilities = (
     umlClass: UmlClass,
     options: { hidePrivates?: boolean } = {}
 ): string => {
+    if (umlClass.operators.length === 0) return ''
+
     let dotString = '| '
 
     // For each visibility group
