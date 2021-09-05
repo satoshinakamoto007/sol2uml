@@ -16,16 +16,13 @@ const debug = require('debug')('sol2uml')
 
 program
     .usage(
-        `A set of visualisation tools for Solidity contracts.
-
-The Solidity code can be pulled from verified source code on Blockchain explorers like Etherscan or from local Solidity files.
-
+        `[subcommand] <options>
+The three subcommands:
 * class:    Generates a UML class diagram from Solidity source code. default
-* storage:  Generates a diagram of a contracts storage slots.
+* storage:  Generates a diagram of a contract's storage slots.
 * flatten:  Pulls verified source files from a Blockchain explorer into one, flat, local Solidity file.
 
-sol2uml class --help
-`
+The Solidity code can be pulled from verified source code on Blockchain explorers like Etherscan or from local Solidity files.`
     )
     .addOption(
         new Option(

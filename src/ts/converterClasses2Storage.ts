@@ -191,6 +191,15 @@ export const parseStructStorageObject = (
                 ? attribute.type.match(/=\\>((?!mapping)\w*)[\\[]/)
                 : attribute.type.match(/(\w+)\[/)
         if (result !== null && result[1] && !isElementary(result[1])) {
+            // Have we already created the storageObject?
+            const existingStorageObject = storageObjects.find(
+                ({ name }) =>
+                    name === result[1] || name === result[1].split('.')[1]
+            )
+            if (existingStorageObject) {
+                return existingStorageObject
+            }
+
             // Find UserDefined type
             const typeClass = otherClasses.find(
                 ({ name }) =>
