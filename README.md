@@ -63,7 +63,7 @@ Options:
   -hl, --hideLibraries                         hide libraries (default: false)
   -hi, --hideInterfaces                        hide interfaces (default: false)
   -ha, --hideAbstracts                         hide abstract contracts (default: false)
-  -hf, --hideFilename                          hide relative path and file name (default: false)
+  -hn, --hideFilename                          hide relative path and file name (default: false)
   -k, --etherscanApiKey <key>                  Etherscan API Key
   -c, --clusterFolders                         cluster contracts into source folders
   -v, --verbose                                run with debugging statements

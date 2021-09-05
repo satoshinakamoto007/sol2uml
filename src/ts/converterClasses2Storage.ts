@@ -111,7 +111,7 @@ const parseStorage = (
             storages.push({
                 id: storageId++,
                 fromSlot: nextFromSlot,
-                toSlot: nextFromSlot + Math.floor((byteSize - 1) / 33),
+                toSlot: nextFromSlot + Math.floor((byteSize - 1) / 32),
                 byteSize,
                 byteOffset: 0,
                 type: attribute.type,
@@ -152,7 +152,9 @@ export const parseStructStorageObject = (
         }
         // Is the user defined type linked to another Contract, Struct or Enum?
         const dependentClass = otherClasses.find(({ name }) => {
-            return name === attribute.type
+            return (
+                name === attribute.type || name === attribute.type.split('.')[1]
+            )
         })
         if (!dependentClass) {
             throw Error(`Failed to find user defined type "${attribute.type}"`)
@@ -191,7 +193,8 @@ export const parseStructStorageObject = (
         if (result !== null && result[1] && !isElementary(result[1])) {
             // Find UserDefined type
             const typeClass = otherClasses.find(
-                ({ name }) => name === result[1]
+                ({ name }) =>
+                    name === result[1] || name === result[1].split('.')[1]
             )
             if (!typeClass) {
                 throw Error(
@@ -291,11 +294,14 @@ export const calcStorageByteSize = (
     if (attribute.attributeType === AttributeType.UserDefined) {
         // Is the user defined type linked to another Contract, Struct or Enum?
         const attributeClass = otherClasses.find(({ name }) => {
-            return name === attribute.type
+            return (
+                name === attribute.type || name === attribute.type.split('.')[1]
+            )
         })
-
         if (!attributeClass) {
-            throw Error(`Failed to find user defined type "${attribute.type}"`)
+            throw Error(
+                `Failed to find user defined struct or enum "${attribute.type}"`
+            )
         }
 
         switch (attributeClass.stereotype) {
@@ -321,7 +327,10 @@ export const calcStorageByteSize = (
                         // UserDefined types can be a struct or enum, so we need to check if it's a struct
                         const userDefinedClass = otherClasses.find(
                             ({ name }) => {
-                                return name === structAttribute.type
+                                return (
+                                    name === structAttribute.type ||
+                                    name === structAttribute.type.split('.')[1]
+                                )
                             }
                         )
                         if (!userDefinedClass) {

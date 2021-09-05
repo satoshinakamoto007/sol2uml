@@ -25,13 +25,21 @@ struct FileLevelYetAnotherStruct {
 }
 
 library LibraryStructs {
+
     struct LibraryLevel {
+        address owner;
+        bool flag;
+        uint16 count;
+    }
+
+    struct LibraryLevel2 {
         address owner;
         FileLevelStruct fls;
     }
 
-    struct LibraryLevel2 {
+    struct LibraryLevel3 {
         LibraryLevel ll;
+        bool flag;
     }
 
     enum LibraryLevelEnum {
@@ -98,6 +106,7 @@ contract TestContract is Parent {
     ParentLevelUsedEnum plue;
     LibraryStructs.LibraryLevel ll;
     LibraryStructs.LibraryLevel2 ll2;
+    LibraryStructs.LibraryLevel3 ll3;
 
     LibraryLevelEnum lle;
 }
