@@ -159,7 +159,7 @@ contract Associations is ContractInterface, ContractAbstract, ContractConcrete {
     SomeStruct someStruct;
     uint256[] someIntArray;
 
-    FileLevelEnum fileLevelEnum;
+    FileLevelStorageEnum fileLevelEnum;
     FileLevelStruct fileLevelStruct;
 
     SomeEnum someEnum;

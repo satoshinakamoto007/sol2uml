@@ -46,6 +46,7 @@ The Solidity code can be pulled from verified source code on Blockchain explorer
                 'mainnet',
                 'polygon',
                 'bsc',
+                'arbitrum',
                 'ropsten',
                 'kovan',
                 'rinkeby',
@@ -53,7 +54,10 @@ The Solidity code can be pulled from verified source code on Blockchain explorer
             ])
             .default('mainnet')
     )
-    .option('-k, --apiKey <key>', 'Etherscan, Polygonscan or BscScan API key')
+    .option(
+        '-k, --apiKey <key>',
+        'Etherscan, Polygonscan, BscScan or Arbiscan API key'
+    )
     .option('-v, --verbose', 'run with debugging statements', false)
 
 program
@@ -85,7 +89,7 @@ If an Ethereum address with a 0x prefix is passed, the verified source code from
         new Option(
             '-d, --depth <value>',
             'depth of connected classes to the base contracts. 1 will only show directly connected contracts, interfaces, libraries, structs and enums.'
-        ).default('-1', 'all')
+        ).default('100', 'all')
     )
     .option(
         '-c, --clusterFolders',

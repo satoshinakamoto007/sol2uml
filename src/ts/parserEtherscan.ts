@@ -14,6 +14,7 @@ const networks = <const>[
     'goerli',
     'polygon',
     'bsc',
+    'arbitrum',
 ]
 type Network = typeof networks[number]
 
@@ -36,6 +37,8 @@ export class EtherscanParser {
         } else if (network === 'bsc') {
             this.url = 'https://api.bscscan.com/api'
             this.apikey = 'APYH49FXVY9UA3KTDI6F4WP3KPIC86NITN'
+        } else if (network === 'arbitrum') {
+            this.url = 'https://api.arbiscan.io/api'
         } else {
             this.url = `https://api-${network}.etherscan.io/api`
         }
