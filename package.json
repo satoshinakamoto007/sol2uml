@@ -22,7 +22,7 @@
     "@solidity-parser/parser": "^0.13.2",
     "axios": "^0.21.1",
     "commander": "^8.1.0",
-    "debug": "^4.3.2",
+    "debug": "^4.3.3",
     "js-graph-algorithms": "^1.0.18",
     "klaw": "^3.0.0",
     "svg-to-png": "^4.0.0",
