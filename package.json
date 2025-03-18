@@ -33,7 +33,7 @@
     "@types/jest": "^26.0.24",
     "@types/klaw": "^3.0.2",
     "@types/verror": "^1.10.5",
-    "jest": "^27.0.6",
+    "jest": "^28.0.0",
     "openzeppelin-solidity": "2.5.1",
     "prettier": "^2.3.2",
     "ts-jest": "^27.0.4",
